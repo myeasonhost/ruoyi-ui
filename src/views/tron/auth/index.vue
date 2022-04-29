@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="代理ID" prop="agencyId">
+      <el-form-item label="代理ID" prop="agencyId" v-hasPermi="['*:*:*']">
         <el-input
           v-model="queryParams.agencyId"
           placeholder="请输入代理ID"
@@ -10,18 +10,23 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="业务员ID" prop="salemanId">
-        <el-input
-          v-model="queryParams.salemanId"
+      <el-form-item label="业务员ID" prop="salemanId" v-hasPermi="['system:user:list']">
+        <el-select
+          v-model="form.salemanId"
           placeholder="请输入业务员ID"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"
-        />
+          @click.native="getUserListByDeptId"
+          @keyup.enter.native="handleQuery">
+          <el-option
+            v-for="item in salemanIds"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"/>
+        </el-select>
       </el-form-item>
       <el-form-item label="地址类型" prop="addressType">
         <el-select v-model="queryParams.addressType" placeholder="请选择地址类型" clearable size="small">
-          <el-option label="请选择字典生成" value="" />
+          <el-option label="TRX" value="TRX" />
+          <el-option label="USDT" value="USDT" />
         </el-select>
       </el-form-item>
       <el-form-item label="授权地址" prop="auAddress">
@@ -81,16 +86,6 @@
           v-hasPermi="['tron:auth:remove']"
         >删除</el-button>
       </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="warning"
-          plain
-          icon="el-icon-download"
-          size="mini"
-          @click="handleExport"
-          v-hasPermi="['tron:auth:export']"
-        >导出</el-button>
-      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -122,7 +117,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -134,22 +129,26 @@
     <!-- 添加或修改授权对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="代理ID" prop="agencyId">
-          <el-input v-model="form.agencyId" placeholder="请输入代理ID" />
+        <el-form-item label="代理ID" prop="agencyId" v-hasPermi="['system:user:list']">
+          <el-input v-model="form.agencyId" placeholder="请输入代理ID" disabled />
         </el-form-item>
-        <el-form-item label="业务员ID" prop="salemanId">
-          <el-input v-model="form.salemanId" placeholder="请输入业务员ID" />
+        <el-form-item label="业务员ID" prop="salemanId" v-hasPermi="['system:user:list']">
+          <el-select
+            v-model="form.salemanId"
+            placeholder="请输入业务员ID"
+            @click.native="getUserListByDeptId">
+            <el-option
+              v-for="item in salemanIds"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"/>
+          </el-select>
         </el-form-item>
         <el-form-item label="地址类型" prop="addressType">
           <el-select v-model="form.addressType" placeholder="请选择地址类型">
-            <el-option label="请选择字典生成" value="" />
+            <el-option label="TRX" value="TRX"/>
+            <el-option label="USDT" value="USDT" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="授权地址" prop="auAddress">
-          <el-input v-model="form.auAddress" placeholder="请输入授权地址" />
-        </el-form-item>
-        <el-form-item label="授权代码" prop="token">
-          <el-input v-model="form.token" placeholder="请输入授权代码" />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" placeholder="请输入备注" />
@@ -164,7 +163,9 @@
 </template>
 
 <script>
-import { listAuth, getAuth, delAuth, addAuth, updateAuth, exportAuth } from "@/api/tron/auth";
+import { listAuth, getAuth, delAuth, addAuth, updateAuth } from "@/api/tron/auth";
+import { listUser } from "@/api/system/user";
+import store from "@/store";
 
 export default {
   name: "Auth",
@@ -186,6 +187,8 @@ export default {
       total: 0,
       // 授权表格数据
       authList: [],
+      // 业务员表格数据
+      salemanIds: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -196,12 +199,14 @@ export default {
         pageSize: 10,
         agencyId: undefined,
         salemanId: undefined,
-        addressType: undefined,
+        addressType: "TRX",
         auAddress: undefined,
         token: undefined,
       },
       // 表单参数
-      form: {},
+      form: {
+
+      },
       // 表单校验
       rules: {
         agencyId: [
@@ -229,6 +234,8 @@ export default {
     };
   },
   created() {
+    //设置地址类型默认选中
+    // this.queryParams.addressType = "TRX";
     this.getList();
   },
   methods: {
@@ -239,6 +246,19 @@ export default {
         this.authList = response.rows;
         this.total = response.total;
         this.loading = false;
+      });
+    },
+    /** 查询业务员列表-按部门ID查找 */
+    getUserListByDeptId() {
+      this.salemanIds = [];
+      var param = {"pageNum":1,"pageSize":100,"deptId":store.state.user.deptId}; //业务员最高值定在50以内
+      listUser(param).then(response => {
+        for (let row of response.rows) {
+          var option={};
+          option.value=row.userName;
+          option.label=row.userName+"（"+row.nickName+"）";
+          this.salemanIds.push(option);
+        }
       });
     },
     // 取消按钮
@@ -252,7 +272,7 @@ export default {
         id: undefined,
         agencyId: undefined,
         salemanId: undefined,
-        addressType: undefined,
+        addressType: "TRX",
         auAddress: undefined,
         token: undefined,
         remark: undefined,
@@ -282,6 +302,8 @@ export default {
       this.reset();
       this.open = true;
       this.title = "添加授权";
+      this.form.agencyId = store.getters.name; //代理ID显示代理用户名
+
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -325,19 +347,6 @@ export default {
         }).then(() => {
           this.getList();
           this.msgSuccess("删除成功");
-        })
-    },
-    /** 导出按钮操作 */
-    handleExport() {
-      const queryParams = this.queryParams;
-      this.$confirm('是否确认导出所有授权数据项?', "警告", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning"
-        }).then(function() {
-          return exportAuth(queryParams);
-        }).then(response => {
-          this.download(response.msg);
         })
     }
   }
