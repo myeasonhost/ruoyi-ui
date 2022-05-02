@@ -10,9 +10,9 @@ export function listAuth(query) {
 }
 
 // 查询授权详细
-export function getAuth(id) {
+export function getAuth(id,method) {
   return request({
-    url: '/tron/auth/' + id,
+    url: '/tron/auth/' + id+'/'+method,
     method: 'get'
   })
 }

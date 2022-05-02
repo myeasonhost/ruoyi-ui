@@ -96,10 +96,19 @@
       <el-table-column label="业务员ID" align="center" prop="salemanId" />
       <el-table-column label="地址类型" align="center" prop="addressType" />
       <el-table-column label="授权地址" align="center" prop="auAddress" />
+      <el-table-column label="已授权" align="center" prop="auNum" />
+      <el-table-column label="余额" align="center" prop="balance" />
       <el-table-column label="授权代码" align="center" prop="token" />
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-search"
+            @click="queryBalance(scope.row)"
+            v-hasPermi="['tron:auth:edit']"
+            >查询余额</el-button>
           <el-button
             size="mini"
             type="text"
@@ -234,8 +243,6 @@ export default {
     };
   },
   created() {
-    //设置地址类型默认选中
-    // this.queryParams.addressType = "TRX";
     this.getList();
   },
   methods: {
@@ -305,11 +312,20 @@ export default {
       this.form.agencyId = store.getters.name; //代理ID显示代理用户名
 
     },
+    /** 查询余额操作 */
+    queryBalance(row) {
+      this.reset();
+      const id = row.id || this.ids
+      getAuth(id,"queryBalance").then(response => {
+        this.msgSuccess("余额查询成功");
+        this.getList();
+      });
+    },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
       const id = row.id || this.ids
-      getAuth(id).then(response => {
+      getAuth(id,"detail").then(response => {
         this.form = response.data;
         this.open = true;
         this.title = "修改授权";
@@ -338,7 +354,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$confirm('是否确认删除授权编号为"' + ids + '"的数据项?', "警告", {
+      this.$confirm('是否确认删除授权为"' + row.auAddress + '"的数据项?', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"

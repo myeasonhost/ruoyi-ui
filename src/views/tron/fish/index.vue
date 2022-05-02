@@ -1,15 +1,6 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="用户ID" prop="userId">
-        <el-input
-          v-model="queryParams.userId"
-          placeholder="请输入用户ID"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="代理ID" prop="agencyId">
         <el-input
           v-model="queryParams.agencyId"
@@ -19,19 +10,19 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="地址" prop="address">
+      <el-form-item label="业务员ID" prop="salemanId">
         <el-input
-          v-model="queryParams.address"
-          placeholder="请输入地址"
+          v-model="queryParams.salemanId"
+          placeholder="请输入业务员ID"
           clearable
           size="small"
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="业务员ID" prop="salemanId">
+      <el-form-item label="地址" prop="address">
         <el-input
-          v-model="queryParams.salemanId"
-          placeholder="请输入业务员ID"
+          v-model="queryParams.address"
+          placeholder="请输入地址"
           clearable
           size="small"
           @keyup.enter.native="handleQuery"
@@ -73,16 +64,6 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          type="primary"
-          plain
-          icon="el-icon-plus"
-          size="mini"
-          @click="handleAdd"
-          v-hasPermi="['tron:fish:add']"
-        >新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           type="success"
           plain
           icon="el-icon-edit"
@@ -116,17 +97,48 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="fishList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="fishList" @selection-change="handleSelectionChange" :border="true">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="地区" align="center" prop="id" v-if="false"/>
-      <el-table-column label="用户ID" align="center" prop="userId" />
-      <el-table-column label="代理ID" align="center" prop="agencyId" />
-      <el-table-column label="地址" align="center" prop="address" />
-      <el-table-column label="业务员ID" align="center" prop="salemanId" />
-      <el-table-column label="授权地址" align="center" prop="auAddress" />
-      <el-table-column label="电话" align="center" prop="mobile" />
-      <el-table-column label="地区" align="center" prop="area" />
-      <el-table-column label="备注" align="center" prop="remark" />
+      <el-table-column label="上级/业务员" align="center" prop="salemanId" width="120">
+        <template slot-scope="scope">
+          <div style="color: #1890ff;">{{ scope.row.agencyId }}</div>
+          <div style="">{{ scope.row.salemanId }}</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="鱼苗信息" align="center" prop="id" width="150">
+        <template slot-scope="scope">
+          <div style="">{{ scope.row.createTime | formatTimer}}</div>
+          <div style="">{{ scope.row.ip }}</div>
+          <div style="color: red;">{{ scope.row.area }}</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="授权地址" align="center" prop="auAddress"  width="400">
+        <template slot-scope="scope">
+          <div style="color: #1890ff;font-family: 'Arial Black';">{{ scope.row.address}}</div>
+          <div style="color: #888888;font-style: italic;">{{ scope.row.auAddress }}</div>
+          <span style="color: red;font-style: italic;">{{ scope.row.auRecordId!=null?"已授权":"" }}</span>
+          <span style="color: gray;font-style: italic;">{{ scope.row.auRecordId==null?"未授权":"" }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="余额" align="left"  prop="balance" width="150">
+        <template slot-scope="scope">
+             <div v-html="scope.row.balance">
+             </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="账户明细" align="left">
+        <template slot-scope="scope">
+          <div style="color: #1890ff;font-family: 'Arial Black';">本金：204.14</div>
+          <div style="color: #888888;font-style: italic;">利息：32.12</div>
+          <div style="color: red;font-style: italic;">已提：0.00</div>
+          <div style="color: gray;font-style: italic;">可提：0.00</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="更新日期" align="center">
+        <template slot-scope="scope">
+          <div style="font-size: 15px;">【{{ scope.row.updateTime | formatDay}}】</div>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -146,7 +158,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -158,20 +170,11 @@
     <!-- 添加或修改鱼苗管理对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="用户ID" prop="userId">
-          <el-input v-model="form.userId" placeholder="请输入用户ID" />
-        </el-form-item>
         <el-form-item label="代理ID" prop="agencyId">
           <el-input v-model="form.agencyId" placeholder="请输入代理ID" />
         </el-form-item>
-        <el-form-item label="地址" prop="address">
-          <el-input v-model="form.address" placeholder="请输入地址" />
-        </el-form-item>
         <el-form-item label="业务员ID" prop="salemanId">
           <el-input v-model="form.salemanId" placeholder="请输入业务员ID" />
-        </el-form-item>
-        <el-form-item label="授权地址" prop="auAddress">
-          <el-input v-model="form.auAddress" placeholder="请输入授权地址" />
         </el-form-item>
         <el-form-item label="电话" prop="mobile">
           <el-input v-model="form.mobile" placeholder="请输入电话" />
@@ -197,6 +200,32 @@ import { listFish, getFish, delFish, addFish, updateFish, exportFish } from "@/a
 export default {
   name: "Fish",
   components: {
+  },
+  filters: {
+    formatTimer: function(value) {
+      let date = new Date(value);
+      let y = date.getFullYear();
+      let MM = date.getMonth() + 1;
+      MM = MM < 10 ? "0" + MM : MM;
+      let d = date.getDate();
+      d = d < 10 ? "0" + d : d;
+      let h = date.getHours();
+      h = h < 10 ? "0" + h : h;
+      let m = date.getMinutes();
+      m = m < 10 ? "0" + m : m;
+      let s = date.getSeconds();
+      s = s < 10 ? "0" + s : s;
+      return y + "-" + MM + "-" + d + " " + h + ":" + m;
+    },
+    formatDay: function(value) {
+      let date = new Date(value);
+      let y = date.getFullYear();
+      let MM = date.getMonth() + 1;
+      MM = MM < 10 ? "0" + MM : MM;
+      let d = date.getDate();
+      d = d < 10 ? "0" + d : d;
+      return y + "-" + MM + "-" + d;
+    }
   },
   data() {
     return {
@@ -268,11 +297,22 @@ export default {
     this.getList();
   },
   methods: {
+    changeBalance(row){
+
+
+    },
     /** 查询鱼苗管理列表 */
     getList() {
       this.loading = true;
       listFish(this.queryParams).then(response => {
-        this.fishList = response.rows;
+        response.rows.map( (item,index) =>{
+          if (item.balance){
+            var balance = eval('(' + item.balance +')');
+            item.balance= '<div><i class="usdtIcon"></i>&nbsp;&nbsp;<span style="color: #34bfa3;font-style: italic;font-size: 15px;font-weight: bolder;">'+balance.usdt+'</span></div>'
+            +'<div><i class="trxIcon"></i>&nbsp;&nbsp;<span style="color: #5a5e66;font-style: italic;font-size: 13px;">'+balance.trx+'</span></div>';
+          }
+          this.fishList.push(item);
+        })
         this.total = response.total;
         this.loading = false;
       });
@@ -381,3 +421,25 @@ export default {
   }
 };
 </script>
+<style>
+.usdtIcon {
+  width: 18px;
+  height: 18px;
+  transform: translateY(12%);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  display: inline-block;
+  background-image:url("../../../assets/icons/usdtlogo.png");
+}
+.trxIcon {
+  width: 18px;
+  height: 18px;
+  transform: translateY(12%);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  display: inline-block;
+  background-image:url("../../../assets/icons/trx.png");
+}
+</style>
