@@ -12,7 +12,7 @@
       </el-form-item>
       <el-form-item label="业务员ID" prop="salemanId" v-hasPermi="['system:user:list']">
         <el-select
-          v-model="form.salemanId"
+          v-model="queryParams.salemanId"
           placeholder="请输入业务员ID"
           @click.native="getUserListByDeptId"
           @keyup.enter.native="handleQuery">
@@ -92,12 +92,21 @@
     <el-table v-loading="loading" :data="authList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="授权代码" align="center" prop="id" v-if="false"/>
-      <el-table-column label="代理ID" align="center" prop="agencyId" />
-      <el-table-column label="业务员ID" align="center" prop="salemanId" />
-      <el-table-column label="地址类型" align="center" prop="addressType" />
-      <el-table-column label="授权地址" align="center" prop="auAddress" />
+      <el-table-column label="上级/业务员" align="center" prop="salemanId" width="120">
+        <template slot-scope="scope">
+          <div style="color: #1890ff;">{{ scope.row.agencyId }}</div>
+          <div style="">{{ scope.row.salemanId }}</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="地址类型" align="center" prop="addressType" width="80"/>
+      <el-table-column label="授权地址" align="center" prop="auAddress"  width="400"/>
       <el-table-column label="已授权" align="center" prop="auNum" />
-      <el-table-column label="余额" align="center" prop="balance" />
+      <el-table-column label="余额" align="left"  prop="balance" width="150">
+        <template slot-scope="scope">
+          <div v-html="scope.row.balance">
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="授权代码" align="center" prop="token" />
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -249,8 +258,16 @@ export default {
     /** 查询授权列表 */
     getList() {
       this.loading = true;
+      this.authList = [];
       listAuth(this.queryParams).then(response => {
-        this.authList = response.rows;
+        response.rows.map( (item,index) =>{
+          if (item.balance){
+            var balance = eval('(' + item.balance +')');
+            item.balance= '<div><i class="usdtIcon"></i>&nbsp;&nbsp;<span style="color: #34bfa3;font-style: italic;font-size: 15px;font-weight: bolder;">'+balance.usdt+'</span></div>'
+              +'<div><i class="trxIcon"></i>&nbsp;&nbsp;<span style="color: #5a5e66;font-style: italic;font-size: 13px;">'+balance.trx+'</span></div>';
+          }
+          this.authList.push(item);
+        })
         this.total = response.total;
         this.loading = false;
       });

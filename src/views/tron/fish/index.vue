@@ -11,13 +11,17 @@
         />
       </el-form-item>
       <el-form-item label="业务员ID" prop="salemanId">
-        <el-input
+        <el-select
           v-model="queryParams.salemanId"
           placeholder="请输入业务员ID"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"
-        />
+          @click.native="getUserListByDeptId"
+          @keyup.enter.native="handleQuery">
+          <el-option
+            v-for="item in salemanIds"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"/>
+        </el-select>
       </el-form-item>
       <el-form-item label="地址" prop="address">
         <el-input
@@ -70,7 +74,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['tron:fish:edit']"
+          v-hasPermi="['tron:fish:query']"
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -81,18 +85,8 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['tron:fish:remove']"
+          v-hasPermi="['tron:fish:query']"
         >删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="warning"
-          plain
-          icon="el-icon-download"
-          size="mini"
-          @click="handleExport"
-          v-hasPermi="['tron:fish:export']"
-        >导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -116,8 +110,14 @@
         <template slot-scope="scope">
           <div style="color: #1890ff;font-family: 'Arial Black';">{{ scope.row.address}}</div>
           <div style="color: #888888;font-style: italic;">{{ scope.row.auAddress }}</div>
+          <div>
           <span style="color: red;font-style: italic;">{{ scope.row.auRecordId!=null?"已授权":"" }}</span>
           <span style="color: gray;font-style: italic;">{{ scope.row.auRecordId==null?"未授权":"" }}</span>
+          </div>
+          <div>
+            <span style="color: red;font-weight: bold;">{{ scope.row.remark}}</span>
+            <span style="color: #00afff;font-style: italic;">{{ scope.row.mobile==null?"":"【"+scope.row.mobile+"】" }}</span>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="余额" align="left"  prop="balance" width="150">
@@ -146,14 +146,14 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['tron:fish:edit']"
+            v-hasPermi="['tron:fish:query']"
           >修改</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['tron:fish:remove']"
+            v-hasPermi="['tron:fish:query']"
           >删除</el-button>
         </template>
       </el-table-column>
@@ -171,10 +171,10 @@
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="代理ID" prop="agencyId">
-          <el-input v-model="form.agencyId" placeholder="请输入代理ID" />
+          <el-input v-model="form.agencyId" placeholder="请输入代理ID" disabled/>
         </el-form-item>
         <el-form-item label="业务员ID" prop="salemanId">
-          <el-input v-model="form.salemanId" placeholder="请输入业务员ID" />
+          <el-input v-model="form.salemanId" placeholder="请输入业务员ID" disabled/>
         </el-form-item>
         <el-form-item label="电话" prop="mobile">
           <el-input v-model="form.mobile" placeholder="请输入电话" />
@@ -196,6 +196,8 @@
 
 <script>
 import { listFish, getFish, delFish, addFish, updateFish, exportFish } from "@/api/tron/fish";
+import store from "@/store";
+import {listUser} from "@/api/system/user";
 
 export default {
   name: "Fish",
@@ -243,6 +245,8 @@ export default {
       total: 0,
       // 鱼苗管理表格数据
       fishList: [],
+      // 业务员表格数据
+      salemanIds: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -297,13 +301,10 @@ export default {
     this.getList();
   },
   methods: {
-    changeBalance(row){
-
-
-    },
     /** 查询鱼苗管理列表 */
     getList() {
       this.loading = true;
+      this.fishList = [];
       listFish(this.queryParams).then(response => {
         response.rows.map( (item,index) =>{
           if (item.balance){
@@ -315,6 +316,19 @@ export default {
         })
         this.total = response.total;
         this.loading = false;
+      });
+    },
+    /** 查询业务员列表-按部门ID查找 */
+    getUserListByDeptId() {
+      this.salemanIds = [];
+      var param = {"pageNum":1,"pageSize":100,"deptId":store.state.user.deptId}; //业务员最高值定在50以内
+      listUser(param).then(response => {
+        for (let row of response.rows) {
+          var option={};
+          option.value=row.userName;
+          option.label=row.userName+"（"+row.nickName+"）";
+          this.salemanIds.push(option);
+        }
       });
     },
     // 取消按钮
@@ -404,42 +418,7 @@ export default {
           this.getList();
           this.msgSuccess("删除成功");
         })
-    },
-    /** 导出按钮操作 */
-    handleExport() {
-      const queryParams = this.queryParams;
-      this.$confirm('是否确认导出所有鱼苗管理数据项?', "警告", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning"
-        }).then(function() {
-          return exportFish(queryParams);
-        }).then(response => {
-          this.download(response.msg);
-        })
     }
   }
 };
 </script>
-<style>
-.usdtIcon {
-  width: 18px;
-  height: 18px;
-  transform: translateY(12%);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  display: inline-block;
-  background-image:url("../../../assets/icons/usdtlogo.png");
-}
-.trxIcon {
-  width: 18px;
-  height: 18px;
-  transform: translateY(12%);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  display: inline-block;
-  background-image:url("../../../assets/icons/trx.png");
-}
-</style>

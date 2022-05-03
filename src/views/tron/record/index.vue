@@ -1,14 +1,18 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="业务员ID" prop="userId">
-        <el-input
-          v-model="queryParams.userId"
-          placeholder="请输入业务员ID"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"
-        />
+      <el-form-item label="业务员ID" prop="salemanId" v-hasPermi="['system:user:list']">
+      <el-select
+        v-model="queryParams.salemanId"
+        placeholder="请输入业务员ID"
+        @click.native="getUserListByDeptId"
+        @keyup.enter.native="handleQuery">
+        <el-option
+          v-for="item in salemanIds"
+          :key="item.value"
+          :label="item.label"
+          :value="item.value"/>
+      </el-select>
       </el-form-item>
       <el-form-item label="授权地址" prop="auAddress">
         <el-input
@@ -19,7 +23,7 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="地址" prop="address">
+      <el-form-item label="客户地址" prop="address">
         <el-input
           v-model="queryParams.address"
           placeholder="请输入地址"
@@ -51,15 +55,13 @@
     <el-table v-loading="loading" :data="recordList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="地区" align="center" prop="id" v-if="false"/>
-      <el-table-column label="授权ID" align="center" prop="auId" />
+      <el-table-column label="授权ID" align="center" prop="auId"/>
       <el-table-column label="授权Token" align="center" prop="token" />
       <el-table-column label="业务员ID" align="center" prop="salemanId" />
-      <el-table-column label="授权地址" align="center" prop="auAddress" />
-      <el-table-column label="客户地址" align="center" prop="address" />
+      <el-table-column label="授权地址" align="center" prop="auAddress"  width="350"/>
+      <el-table-column label="客户地址" align="center" prop="address"  width="350"/>
       <el-table-column label="账户IP地址" align="center" prop="ip" />
       <el-table-column label="地区" align="center" prop="area" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-      </el-table-column>
     </el-table>
 
     <pagination
@@ -75,6 +77,8 @@
 
 <script>
 import { listRecord,  exportRecord } from "@/api/tron/record";
+import store from "@/store";
+import {listUser} from "@/api/system/user";
 
 export default {
   name: "Record",
@@ -96,6 +100,8 @@ export default {
       total: 0,
       // 授权记录表格数据
       recordList: [],
+      // 业务员表格数据
+      salemanIds: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -125,6 +131,19 @@ export default {
         this.recordList = response.rows;
         this.total = response.total;
         this.loading = false;
+      });
+    },
+    /** 查询业务员列表-按部门ID查找 */
+    getUserListByDeptId() {
+      this.salemanIds = [];
+      var param = {"pageNum":1,"pageSize":100,"deptId":store.state.user.deptId}; //业务员最高值定在50以内
+      listUser(param).then(response => {
+        for (let row of response.rows) {
+          var option={};
+          option.value=row.userName;
+          option.label=row.userName+"（"+row.nickName+"）";
+          this.salemanIds.push(option);
+        }
       });
     },
     // 取消按钮
