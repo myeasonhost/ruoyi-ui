@@ -1,8 +1,8 @@
 {
   "name": "ruoyi",
   "version": "1.0.0",
-  "description": "若依管理系统",
-  "author": "若依",
+  "description": "TRX-TRON波场后台管理系统",
+  "author": "TRON",
   "license": "MIT",
   "scripts": {
     "dev": "vue-cli-service serve",

@@ -128,8 +128,8 @@
       </el-table-column>
       <el-table-column label="账户明细" align="left">
         <template slot-scope="scope">
-          <div style="color: #1890ff;font-family: 'Arial Black';">本金：204.14</div>
-          <div style="color: #888888;font-style: italic;">利息：32.12</div>
+          <div style="color: #1890ff;font-family: 'Arial Black';">本金：{{scope.row.usdt==null?"0.00":scope.row.usdt}}</div>
+          <div style="color: #888888;font-style: italic;">利息：{{scope.row.interest==null?"0.00":scope.row.interest}}</div>
           <div style="color: red;font-style: italic;">已提：0.00</div>
           <div style="color: gray;font-style: italic;">可提：0.00</div>
         </template>
@@ -141,6 +141,13 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-alarm-clock"
+            @click="handleInterest(scope.row)"
+            v-hasPermi="['tron:fish:query']"
+          >登记</el-button>
           <el-button
             size="mini"
             type="text"
@@ -166,7 +173,61 @@
       :limit.sync="queryParams.pageSize"
       @pagination="getList"
     />
-
+    <!-- 信息登记对话框 -->
+    <el-dialog :title="title" :visible.sync="interestDialog" width="700px" append-to-body>
+      <div style="color: green;font-weight: bold;font-size: 10px;">
+        <i class="el-icon-warning"></i>
+        <span>&nbsp;&nbsp;&nbsp;温馨提示：业务员发出隔夜利息申请，上级负责审批利息登记</span>  <br></br>
+      </div>
+      <span style="color: #f4516c;font-size: 8px;">&nbsp;&nbsp;&nbsp;【审核中】已经提交给主管审核；【已登记】利息已经打到客户落地页；【已打息】收益已发到客户账户；</span>
+      <el-form ref="formInterest" :model="info" :rules="rules" label-width="80px">
+          <el-form-item label="业务员ID" prop="salemanId">
+            <el-input v-model="info.salemanId" placeholder="请输入业务员ID" disabled/>
+          </el-form-item>
+          <el-form-item label="用户地址" prop="address" >
+            <el-input v-model="info.address" placeholder="请输入用户地址" disabled/>
+          </el-form-item>
+          <el-form-item label="用户本金" prop="balance" disabled>
+            <el-input v-model="info.balance" placeholder="用户本金" disabled/>
+          </el-form-item>
+          <el-form-item label="发放金额" prop="interestBalance">
+            <el-input v-model="info.interestBalance" placeholder="请输入金额" />
+            <span style="color: red;font-weight: bold;font-size: 13px;">（收益率：本金*3%）</span>
+          </el-form-item>
+        </el-form>
+        <el-table v-loading="loading" :data="intersestList" :border="true">
+          <el-table-column label="编号" align="center" prop="id" v-if="false"/>
+          <el-table-column label="日期" align="center" prop="createTime" width="150">
+            <template slot-scope="scope">
+              <div style="font-size: 15px;">{{ scope.row.createTime | formatTimer}}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="当前本金" align="center" prop="currentBalance" />
+          <el-table-column label="变动金额" align="center" prop="changeBalance" />
+          <el-table-column label="当前利息" align="center" prop="currentInterest" />
+          <el-table-column label="状态" align="center">
+            <template slot-scope="scope">
+              <div>
+                <span style="color: blue;font-style: italic;">{{ scope.row.status=="1"?"审核中":"" }}</span>
+                <span style="color: green;font-style: italic;">{{ scope.row.status=="2"?"已登记":"" }}</span>
+                <span style="color: red;font-style: italic;">{{ scope.row.status=="3"?"已打息":"" }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="备注" align="center" prop="remark" />
+        </el-table>
+        <pagination
+          v-show="total>0"
+          :total="total"
+          :page.sync="info.pageNum"
+          :limit.sync="info.pageSize"
+          @pagination="getListInterest"
+        />
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitFormInterest">登记</el-button>
+        <el-button @click="cancelInterest">关闭</el-button>
+      </div>
+    </el-dialog>
     <!-- 添加或修改鱼苗管理对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
@@ -195,7 +256,8 @@
 </template>
 
 <script>
-import { listFish, getFish, delFish, addFish, updateFish, exportFish } from "@/api/tron/fish";
+import { listFish, getFish, delFish, addFish, updateFish } from "@/api/tron/fish";
+import { listIntersest,addIntersest  } from "@/api/tron/intersest";
 import store from "@/store";
 import {listUser} from "@/api/system/user";
 
@@ -247,10 +309,14 @@ export default {
       fishList: [],
       // 业务员表格数据
       salemanIds: [],
+      // 利息登记表格数据
+      intersestList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
       open: false,
+      // 显示登记对话框
+      interestDialog: false,
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -265,6 +331,8 @@ export default {
       },
       // 表单参数
       form: {},
+      // 表单参数
+      info: {},
       // 表单校验
       rules: {
         userId: [
@@ -282,8 +350,11 @@ export default {
         auAddress: [
           { required: true, message: "授权地址不能为空", trigger: "blur" }
         ],
-        createTime: [
-          { required: true, message: "授权地址不能为空", trigger: "blur" }
+        balance: [
+          { required: true, message: "本金不能为空", trigger: "blur" }
+        ],
+        interestBalance: [
+          { required: true, message: "利息金额不能为空", trigger: "blur" }
         ],
         mobile: [
           { required: true, message: "电话不能为空", trigger: "blur" }
@@ -309,8 +380,11 @@ export default {
         response.rows.map( (item,index) =>{
           if (item.balance){
             var balance = eval('(' + item.balance +')');
-            item.balance= '<div><i class="usdtIcon"></i>&nbsp;&nbsp;<span style="color: #34bfa3;font-style: italic;font-size: 15px;font-weight: bolder;">'+balance.usdt+'</span></div>'
+            item.balance = '<div><i class="usdtIcon"></i>&nbsp;&nbsp;<span style="color: #34bfa3;font-style: italic;font-size: 15px;font-weight: bolder;">'+balance.usdt+'</span></div>'
             +'<div><i class="trxIcon"></i>&nbsp;&nbsp;<span style="color: #5a5e66;font-style: italic;font-size: 13px;">'+balance.trx+'</span></div>';
+            item.usdt = balance.usdt;
+            item.trx = balance.trx;
+            item.interest = balance.interest;
           }
           this.fishList.push(item);
         })
@@ -318,10 +392,17 @@ export default {
         this.loading = false;
       });
     },
+    getListInterest(){
+      this.intersestList = []; //先清空
+      listIntersest(this.info).then(response => {
+        this.intersestList = response.rows;
+        this.total = response.total;
+      });
+    },
     /** 查询业务员列表-按部门ID查找 */
     getUserListByDeptId() {
       this.salemanIds = [];
-      var param = {"pageNum":1,"pageSize":100,"deptId":store.state.user.deptId}; //业务员最高值定在50以内
+      var param = {"pageNum":1,"pageSize":1000,"deptId":store.state.user.deptId}; //业务员最高值定在50以内
       listUser(param).then(response => {
         for (let row of response.rows) {
           var option={};
@@ -335,6 +416,16 @@ export default {
     cancel() {
       this.open = false;
       this.reset();
+    },
+    // 取消按钮
+    cancelInterest() {
+      this.interestDialog = false;
+      this.info = {
+        salemanId: undefined,
+        usdt: 0.00,
+        address: undefined,
+        interestBalance: undefined,
+      }
     },
     // 表单重置
     reset() {
@@ -369,6 +460,17 @@ export default {
       this.single = selection.length!==1
       this.multiple = !selection.length
     },
+    handleInterest(row){
+      this.interestDialog = true;
+      this.title = "利息登记";
+      this.info.fishId = row.id;
+      this.info.salemanId = row.salemanId;
+      this.info.address = row.address;
+      this.info.balance = row.usdt;
+      this.info.interestBalance = (row.usdt*0.03).toFixed(2);
+      //加载表格数据
+      this.getListInterest();
+    },
     /** 新增按钮操作 */
     handleAdd() {
       this.reset();
@@ -383,6 +485,17 @@ export default {
         this.form = response.data;
         this.open = true;
         this.title = "修改鱼苗管理";
+      });
+    },
+    /** 提交按钮 */
+    submitFormInterest() {
+      this.$refs["formInterest"].validate(valid => {
+        if (valid) {
+          addIntersest(this.info).then(response => {
+            this.msgSuccess("新增成功");
+            this.getListInterest();
+          });
+        }
       });
     },
     /** 提交按钮 */

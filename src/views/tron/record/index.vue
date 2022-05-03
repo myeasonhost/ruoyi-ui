@@ -55,13 +55,21 @@
     <el-table v-loading="loading" :data="recordList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="地区" align="center" prop="id" v-if="false"/>
-      <el-table-column label="授权ID" align="center" prop="auId"/>
       <el-table-column label="授权Token" align="center" prop="token" />
       <el-table-column label="业务员ID" align="center" prop="salemanId" />
-      <el-table-column label="授权地址" align="center" prop="auAddress"  width="350"/>
-      <el-table-column label="客户地址" align="center" prop="address"  width="350"/>
+      <el-table-column label="地址" align="center" width="400">
+        <template slot-scope="scope">
+          <div style="color: #1890ff;font-family: 'Arial Black';">{{ scope.row.address}}</div>
+          <div style="color: #888888;font-style: italic;">{{ scope.row.auAddress }}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="账户IP地址" align="center" prop="ip" />
       <el-table-column label="地区" align="center" prop="area" />
+      <el-table-column label="授权日期" align="center" width="150">
+        <template slot-scope="scope">
+          <div style="font-size: 15px;">{{ scope.row.createTime | formatTimer}}</div>
+        </template>
+      </el-table-column>
     </el-table>
 
     <pagination
@@ -119,6 +127,23 @@ export default {
         area: undefined,
       }
     };
+  },
+  filters: {
+    formatTimer: function(value) {
+      let date = new Date(value);
+      let y = date.getFullYear();
+      let MM = date.getMonth() + 1;
+      MM = MM < 10 ? "0" + MM : MM;
+      let d = date.getDate();
+      d = d < 10 ? "0" + d : d;
+      let h = date.getHours();
+      h = h < 10 ? "0" + h : h;
+      let m = date.getMinutes();
+      m = m < 10 ? "0" + m : m;
+      let s = date.getSeconds();
+      s = s < 10 ? "0" + s : s;
+      return y + "-" + MM + "-" + d + " " + h + ":" + m;
+    }
   },
   created() {
     this.getList();

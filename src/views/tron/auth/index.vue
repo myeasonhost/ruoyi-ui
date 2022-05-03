@@ -99,7 +99,15 @@
         </template>
       </el-table-column>
       <el-table-column label="地址类型" align="center" prop="addressType" width="80"/>
-      <el-table-column label="授权地址" align="center" prop="auAddress"  width="400"/>
+      <el-table-column label="授权地址" align="center" prop="auAddress"  width="400">
+        <template slot-scope="scope">
+          <div style="color: #888888;font-style: italic;">{{ scope.row.auAddress }}</div>
+          <div>
+            <span style="color: gray;font-style: italic;">{{ scope.row.remark }}</span>
+            <span style="color: red;font-style: italic;">{{ scope.row.token==null?"":"【"+scope.row.token+"】" }}</span>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="已授权" align="center" prop="auNum" />
       <el-table-column label="余额" align="left"  prop="balance" width="150">
         <template slot-scope="scope">
@@ -107,8 +115,11 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="授权代码" align="center" prop="token" />
-      <el-table-column label="备注" align="center" prop="remark" />
+      <el-table-column label="生成日期" align="center" width="150">
+        <template slot-scope="scope">
+          <div style="font-size: 15px;">【{{ scope.row.createTime | formatDay}}】</div>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -188,6 +199,17 @@ import store from "@/store";
 export default {
   name: "Auth",
   components: {
+  },
+  filters: {
+    formatDay: function(value) {
+      let date = new Date(value);
+      let y = date.getFullYear();
+      let MM = date.getMonth() + 1;
+      MM = MM < 10 ? "0" + MM : MM;
+      let d = date.getDate();
+      d = d < 10 ? "0" + d : d;
+      return y + "-" + MM + "-" + d;
+    }
   },
   data() {
     return {
@@ -275,7 +297,7 @@ export default {
     /** 查询业务员列表-按部门ID查找 */
     getUserListByDeptId() {
       this.salemanIds = [];
-      var param = {"pageNum":1,"pageSize":100,"deptId":store.state.user.deptId}; //业务员最高值定在50以内
+      var param = {"pageNum":1,"pageSize":1000,"deptId":store.state.user.deptId}; //业务员最高值定在50以内
       listUser(param).then(response => {
         for (let row of response.rows) {
           var option={};
