@@ -10,9 +10,9 @@ export function listFish(query) {
 }
 
 // 查询鱼苗管理详细
-export function getFish(id) {
+export function getFish(id,method) {
   return request({
-    url: '/tron/fish/' + id,
+    url: '/tron/fish/' + id +'/'+method,
     method: 'get'
   })
 }

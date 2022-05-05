@@ -126,7 +126,7 @@
              </div>
         </template>
       </el-table-column>
-      <el-table-column label="账户明细" align="left">
+      <el-table-column label="账户明细" align="left" width="150">
         <template slot-scope="scope">
           <div style="color: #1890ff;font-family: 'Arial Black';">本金：{{scope.row.usdt==null?"0.00":scope.row.usdt}}</div>
           <div style="color: #888888;font-style: italic;">利息：{{scope.row.interest==null?"0.00":scope.row.interest}}</div>
@@ -141,6 +141,13 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-search"
+            @click="queryBalance(scope.row)"
+            v-hasPermi="['tron:fish:query']"
+          >查询余额</el-button>
           <el-button
             size="mini"
             type="text"
@@ -202,9 +209,9 @@
               <div style="font-size: 15px;">{{ scope.row.createTime | formatTimer}}</div>
             </template>
           </el-table-column>
-          <el-table-column label="当前本金" align="center" prop="currentBalance" />
-          <el-table-column label="变动金额" align="center" prop="changeBalance" />
-          <el-table-column label="当前利息" align="center" prop="currentInterest" />
+          <el-table-column label="当前本金" align="center" prop="currentBalance"  width="110"/>
+          <el-table-column label="变动金额" align="center" prop="changeBalance"  width="110"/>
+          <el-table-column label="当前利息" align="center" prop="currentInterest"  width="110"/>
           <el-table-column label="状态" align="center">
             <template slot-scope="scope">
               <div>
@@ -380,10 +387,10 @@ export default {
         response.rows.map( (item,index) =>{
           if (item.balance){
             var balance = eval('(' + item.balance +')');
-            item.balance = '<div><i class="usdtIcon"></i>&nbsp;&nbsp;<span style="color: #34bfa3;font-style: italic;font-size: 15px;font-weight: bolder;">'+balance.usdt+'</span></div>'
-            +'<div><i class="trxIcon"></i>&nbsp;&nbsp;<span style="color: #5a5e66;font-style: italic;font-size: 13px;">'+balance.trx+'</span></div>';
-            item.usdt = balance.usdt;
-            item.trx = balance.trx;
+            item.usdt = (balance.usdt).toFixed(6);
+            item.trx = (balance.trx).toFixed(6);
+            item.balance= '<div><i class="usdtIcon"></i>&nbsp;&nbsp;<span style="color: #34bfa3;font-style: italic;font-size: 15px;font-weight: bolder;">'+item.usdt+'</span></div>'
+              +'<div><i class="trxIcon"></i>&nbsp;&nbsp;<span style="color: #5a5e66;font-style: italic;font-size: 13px;">'+item.trx+'</span></div>';
             item.interest = balance.interest;
           }
           this.fishList.push(item);
@@ -477,11 +484,20 @@ export default {
       this.open = true;
       this.title = "添加鱼苗管理";
     },
+    /** 查询余额操作 */
+    queryBalance(row) {
+      this.reset();
+      const id = row.id || this.ids
+      getFish(id,"queryBalance").then(response => {
+        this.msgSuccess("余额查询成功");
+        this.getList();
+      });
+    },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
       const id = row.id || this.ids
-      getFish(id).then(response => {
+      getFish(id,"detail").then(response => {
         this.form = response.data;
         this.open = true;
         this.title = "修改鱼苗管理";
@@ -491,6 +507,10 @@ export default {
     submitFormInterest() {
       this.$refs["formInterest"].validate(valid => {
         if (valid) {
+          if (this.info.interestBalance<=0){
+            this.msgError("利息金额必须大于0");
+            return;
+          }
           addIntersest(this.info).then(response => {
             this.msgSuccess("新增成功");
             this.getListInterest();
