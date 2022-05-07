@@ -37,15 +37,9 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="交易类型" prop="type">
-        <el-select v-model="queryParams.type" placeholder="请选择" clearable size="small">
-          <el-option label="赠送" value="1" />
-          <el-option label="打息" value="2" />
-          <el-option label="转账" value="3" />
-        </el-select>
-      </el-form-item>
+
       <el-form-item label="交易状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择" clearable size="small">
+        <el-select v-model="queryParams.status" placeholder="请选择交易状态" clearable size="small">
           <el-option label="广播中" value="1" />
           <el-option label="广播成功" value="2" />
           <el-option label="广播失败" value="3" />
@@ -65,15 +59,19 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['tron:transfer:export']"
+          v-hasPermi="['tron:bill:export']"
         >导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="transferList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="billList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="ID" align="center" prop="id" width="80"/>
+      <el-table-column label="日期" align="center" prop="createTime" width="150">
+        <template slot-scope="scope">
+          <div style="font-size: 15px;">{{ scope.row.createTime | formatTimer}}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="上级/业务员" align="center" prop="agencyId" width="120">
         <template slot-scope="scope">
           <div style="color: #1890ff;">{{ scope.row.agencyId }}</div>
@@ -82,20 +80,18 @@
       </el-table-column>
       <el-table-column label="交易地址" align="center" width="400" >
         <template slot-scope="scope">
-          <div style="color: #00afff;">来源地址：{{ scope.row.fromAddress}}</div>
-          <div style="color: #888888;font-style: italic;">接收地址：{{ scope.row.toAddress }}</div>
+          <div style="color: #00afff;font-weight: bold;">来源地址：{{ scope.row.fromAddress}}</div>
+          <div style="color: #7a6df0;font-style: italic;">授权地址：{{ scope.row.auAddress }}</div>
+          <div style="color: #888888;font-weight: bold">接收地址：{{ scope.row.toAddress }}</div>
         </template>
       </el-table-column>
-      <el-table-column label="交易类型" align="center" prop="type" width="120">
+      <el-table-column label="账户明细" align="left" width="150">
         <template slot-scope="scope">
-          <div>
-            <span style="color: blue;font-weight: bold;">{{ scope.row.type=="1"?scope.row.addressType+" 赠送":"" }}</span>
-            <span style="color: green;font-weight: bold;">{{ scope.row.type=="2"?scope.row.addressType+" 打息":"" }}</span>
-            <span style="color: red;font-weight: bold;">{{ scope.row.type=="3"?scope.row.addressType+" 转账":"" }}</span>
-          </div>
+          <div style="color: #1890ff;font-family: 'Arial Black';">提现金额：{{scope.row.withdrawBalance==null?"0.00":scope.row.withdrawBalance}}</div>
+          <div style="color: #888888;font-style: italic;">结算金额：{{scope.row.billBalance==null?"0.00":scope.row.billBalance}}</div>
+          <div style="color: red;font-style: italic;">手续费：{{scope.row.serviceCharge==null?"0.00":scope.row.serviceCharge}}</div>
         </template>
       </el-table-column>
-      <el-table-column label="交易金额" align="center" prop="balance" width="120"/>
       <el-table-column label="交易状态" align="center" prop="status" width="80">
         <template slot-scope="scope">
           <div>
@@ -105,7 +101,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" width="400"/>
+      <el-table-column label="备注" align="center" prop="remark" />
     </el-table>
 
     <pagination
@@ -115,15 +111,60 @@
       :limit.sync="queryParams.pageSize"
       @pagination="getList"
     />
+
+    <!-- 添加或修改结算记录对话框 -->
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="代理ID" prop="agencyId">
+          <el-input v-model="form.agencyId" placeholder="请输入代理ID" />
+        </el-form-item>
+        <el-form-item label="业务员ID" prop="salemanId">
+          <el-input v-model="form.salemanId" placeholder="请输入业务员ID" />
+        </el-form-item>
+        <el-form-item label="来源地址" prop="fromAddress">
+          <el-input v-model="form.fromAddress" placeholder="请输入来源地址" />
+        </el-form-item>
+        <el-form-item label="授权地址" prop="auAddress">
+          <el-input v-model="form.auAddress" placeholder="请输入授权地址" />
+        </el-form-item>
+        <el-form-item label="接收账户" prop="toAddress">
+          <el-input v-model="form.toAddress" placeholder="请输入接收账户" />
+        </el-form-item>
+        <el-form-item label="转化USDT" prop="billAddress">
+          <el-input v-model="form.billBalance" placeholder="请输入转化USDT" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitForm">确 定</el-button>
+        <el-button @click="cancel">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { listTransfer, getTransfer, delTransfer, addTransfer, updateTransfer, exportTransfer } from "@/api/tron/transfer";
+import { listBill, getBill, delBill, addBill, updateBill, exportBill } from "@/api/tron/bill";
 
 export default {
-  name: "Transfer",
+  name: "Bill",
   components: {
+  },
+  filters: {
+    formatTimer: function (value) {
+      let date = new Date(value);
+      let y = date.getFullYear();
+      let MM = date.getMonth() + 1;
+      MM = MM < 10 ? "0" + MM : MM;
+      let d = date.getDate();
+      d = d < 10 ? "0" + d : d;
+      let h = date.getHours();
+      h = h < 10 ? "0" + h : h;
+      let m = date.getMinutes();
+      m = m < 10 ? "0" + m : m;
+      let s = date.getSeconds();
+      s = s < 10 ? "0" + s : s;
+      return y + "-" + MM + "-" + d + " " + h + ":" + m;
+    }
   },
   data() {
     return {
@@ -139,8 +180,8 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
-      // 转账记录表格数据
-      transferList: [],
+      // 结算记录表格数据
+      billList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -150,11 +191,13 @@ export default {
         pageNum: 1,
         pageSize: 10,
         agencyId: undefined,
-        fromAddress: undefined,
         salemanId: undefined,
+        fromAddress: undefined,
         toAddress: undefined,
-        balance: undefined,
-        type: undefined,
+        billAddress: undefined,
+        withdrawBalance: undefined,
+        billBalance: undefined,
+        serviceCharge: undefined,
         status: undefined,
       },
       // 表单参数
@@ -164,24 +207,21 @@ export default {
         agencyId: [
           { required: true, message: "代理ID不能为空", trigger: "blur" }
         ],
+        salemanId: [
+          { required: true, message: "业务员ID不能为空", trigger: "blur" }
+        ],
         fromAddress: [
           { required: true, message: "来源地址不能为空", trigger: "blur" }
         ],
-        salemanId: [
-          { required: true, message: "业务员ID不能为空", trigger: "blur" }
+        auAddress: [
+          { required: true, message: "授权地址不能为空", trigger: "blur" }
         ],
         toAddress: [
           { required: true, message: "接收账户不能为空", trigger: "blur" }
         ],
-        status: [
-          { required: true, message: "1=广播中,2=广播成功，3=广播失败不能为空", trigger: "blur" }
-        ],
-        remark: [
-          { required: true, message: "备注不能为空", trigger: "blur" }
-        ],
-        createTime: [
-          { required: true, message: "备注不能为空", trigger: "blur" }
-        ],
+        billAddress: [
+          { required: true, message: "结算账户不能为空", trigger: "blur" }
+        ]
       }
     };
   },
@@ -189,11 +229,11 @@ export default {
     this.getList();
   },
   methods: {
-    /** 查询转账记录列表 */
+    /** 查询结算记录列表 */
     getList() {
       this.loading = true;
-      listTransfer(this.queryParams).then(response => {
-        this.transferList = response.rows;
+      listBill(this.queryParams).then(response => {
+        this.billList = response.rows;
         this.total = response.total;
         this.loading = false;
       });
@@ -208,11 +248,13 @@ export default {
       this.form = {
         id: undefined,
         agencyId: undefined,
-        fromAddress: undefined,
         salemanId: undefined,
+        fromAddress: undefined,
         toAddress: undefined,
-        balance: undefined,
-        type: undefined,
+        billAddress: undefined,
+        withdrawBalance: undefined,
+        billBalance: undefined,
+        serviceCharge: undefined,
         status: "0",
         remark: undefined,
         createTime: undefined,
@@ -240,16 +282,16 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加转账记录";
+      this.title = "添加结算记录";
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
       const id = row.id || this.ids
-      getTransfer(id).then(response => {
+      getBill(id).then(response => {
         this.form = response.data;
         this.open = true;
-        this.title = "修改转账记录";
+        this.title = "修改结算记录";
       });
     },
     /** 提交按钮 */
@@ -257,13 +299,13 @@ export default {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.id != null) {
-            updateTransfer(this.form).then(response => {
+            updateBill(this.form).then(response => {
               this.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addTransfer(this.form).then(response => {
+            addBill(this.form).then(response => {
               this.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -275,12 +317,12 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const ids = row.id || this.ids;
-      this.$confirm('是否确认删除转账记录编号为"' + ids + '"的数据项?', "警告", {
+      this.$confirm('是否确认删除结算记录编号为"' + ids + '"的数据项?', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"
         }).then(function() {
-          return delTransfer(ids);
+          return delBill(ids);
         }).then(() => {
           this.getList();
           this.msgSuccess("删除成功");
@@ -289,12 +331,12 @@ export default {
     /** 导出按钮操作 */
     handleExport() {
       const queryParams = this.queryParams;
-      this.$confirm('是否确认导出所有转账记录数据项?', "警告", {
+      this.$confirm('是否确认导出所有结算记录数据项?', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"
         }).then(function() {
-          return exportTransfer(queryParams);
+          return exportBill(queryParams);
         }).then(response => {
           this.download(response.msg);
         })

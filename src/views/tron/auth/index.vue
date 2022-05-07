@@ -75,17 +75,6 @@
           v-hasPermi="['tron:auth:edit']"
         >修改</el-button>
       </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="el-icon-delete"
-          size="mini"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['tron:auth:remove']"
-        >删除</el-button>
-      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -136,7 +125,7 @@
             @click="handleUpdate(scope.row)"
             v-hasPermi="['tron:auth:edit']"
           >修改</el-button>
-          <el-button
+          <el-button v-if="!scope.row.auNum"
             size="mini"
             type="text"
             icon="el-icon-delete"
@@ -158,8 +147,8 @@
     <!-- 添加或修改授权对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="代理ID" prop="agencyId" v-hasPermi="['system:user:list']">
-          <el-input v-model="form.agencyId" placeholder="请输入代理ID" disabled />
+        <el-form-item label="代理ID" prop="agencyId" v-hasPermi="['*:*:*']">
+          <el-input v-model="form.agencyId" placeholder="请输入代理ID" />
         </el-form-item>
         <el-form-item label="业务员ID" prop="salemanId" v-hasPermi="['system:user:list']">
           <el-select
@@ -249,12 +238,6 @@ export default {
       },
       // 表单校验
       rules: {
-        agencyId: [
-          { required: true, message: "代理ID不能为空", trigger: "blur" }
-        ],
-        salemanId: [
-          { required: true, message: "业务员ID不能为空", trigger: "blur" }
-        ],
         addressType: [
           { required: true, message: "地址类型不能为空", trigger: "change" }
         ],
@@ -348,7 +331,6 @@ export default {
       this.reset();
       this.open = true;
       this.title = "添加授权";
-      this.form.agencyId = store.getters.name; //代理ID显示代理用户名
 
     },
     /** 查询余额操作 */

@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="代理ID" prop="agencyId">
+      <el-form-item label="代理ID" prop="agencyId" v-hasPermi="['*:*:*']">
         <el-input
           v-model="queryParams.agencyId"
           placeholder="请输入代理ID"
@@ -10,7 +10,7 @@
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="业务员ID" prop="salemanId">
+      <el-form-item label="业务员ID" prop="salemanId" v-hasPermi="['system:user:list']">
         <el-select
           v-model="queryParams.salemanId"
           placeholder="请输入业务员ID"
@@ -68,25 +68,13 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          type="success"
+          type="warning"
           plain
-          icon="el-icon-edit"
+          icon="el-icon-download"
           size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['tron:fish:query']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="el-icon-delete"
-          size="mini"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['tron:fish:query']"
-        >删除</el-button>
+          @click="handleExport"
+          v-hasPermi="['tron:fish:export']"
+        >导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -130,8 +118,8 @@
         <template slot-scope="scope">
           <div style="color: #1890ff;font-family: 'Arial Black';">本金：{{scope.row.usdt==null?"0.00":scope.row.usdt}}</div>
           <div style="color: #888888;font-style: italic;">利息：{{scope.row.interest==null?"0.00":scope.row.interest}}</div>
-          <div style="color: red;font-style: italic;">已提：0.00</div>
-          <div style="color: gray;font-style: italic;">可提：0.00</div>
+          <div style="color: red;font-style: italic;">已提：{{scope.row.finish_withdraw==null?"0.00":scope.row.finish_withdraw}}</div>
+          <div style="color: gray;font-style: italic;">可提：{{scope.row.allow_withdraw==null?"0.00":scope.row.allow_withdraw}}</div>
         </template>
       </el-table-column>
       <el-table-column label="更新日期" align="center">
@@ -146,28 +134,35 @@
             type="text"
             icon="el-icon-search"
             @click="queryBalance(scope.row)"
-            v-hasPermi="['tron:fish:query']"
+            v-hasPermi="['tron:fish:queryBalance']"
           >查询余额</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-alarm-clock"
             @click="handleInterest(scope.row)"
-            v-hasPermi="['tron:fish:query']"
+            v-hasPermi="['tron:fish:dengji']"
           >登记</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-finished"
+            @click="transferUSDT(scope.row)"
+            v-hasPermi="['tron:bill:add']"
+          >资金转化</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['tron:fish:query']"
+            v-hasPermi="['tron:fish:edit']"
           >修改</el-button>
-          <el-button
+          <el-button v-if="!scope.row.auRecordId"
             size="mini"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['tron:fish:query']"
+            v-hasPermi="['tron:fish:remove']"
           >删除</el-button>
         </template>
       </el-table-column>
@@ -180,8 +175,51 @@
       :limit.sync="queryParams.pageSize"
       @pagination="getList"
     />
+    <!-- 资金转化对话框 -->
+    <el-dialog :title="title" :visible.sync="openBillDialog" width="650px" append-to-body size="mini">
+      <div style="color: green;font-weight: bold;font-size: 10px;">
+        <i class="el-icon-warning"></i>
+        <span>&nbsp;&nbsp;&nbsp;温馨提示：请查看资金转化明细的状态为广播成功，确保资金转化交易成功</span>  <br></br>
+      </div>
+      <span style="color: #f4516c;font-size: 8px;">&nbsp;&nbsp;&nbsp;请确保授权地址里面有10个TRX，否则可能转化失败；</span>
+      <el-form ref="formTransfer" :model="formTransfer" :rules="rules" label-width="90px">
+        <el-form-item label="代理ID" prop="agencyId">
+          <el-input v-model="formTransfer.agencyId" placeholder="请输入代理ID" disabled/>
+        </el-form-item>
+        <el-form-item label="业务员ID" prop="salemanId">
+          <el-input v-model="formTransfer.salemanId" placeholder="请输入业务员ID" disabled/>
+        </el-form-item>
+        <el-form-item label="来源地址" prop="address">
+          <el-col :span="15">
+            <el-input v-model="formTransfer.fromAddress" placeholder="请输入来源地址" disabled/>
+          </el-col>
+          <el-col :span="8">
+            <span style="color: #f4516c;font-size: 8px;">{{formTransfer.fromAddressbalance}}</span>
+          </el-col>
+        </el-form-item>
+        <el-form-item label="授权地址" prop="auAddress">
+          <el-col :span="15">
+            <el-input v-model="formTransfer.auAddress" placeholder="请输入授权地址" disabled/>
+          </el-col>
+          <el-col :span="8">
+             <span style="color: #f4516c;font-size: 8px;">{{formTransfer.auAddressbalance}}</span>
+          </el-col>
+        </el-form-item>
+        <el-form-item label="接收地址" prop="toAddress">
+          <el-input v-model="formTransfer.toAddress" placeholder="请输入接收地址" />
+        </el-form-item>
+        <el-form-item label="转化USDT" prop="withdrawBalance">
+          <el-input v-model="formTransfer.withdrawBalance" placeholder="请输入转化USDT" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitFormTransfer">确 定</el-button>
+        <el-button @click="cancelTransfer">取 消</el-button>
+      </div>
+    </el-dialog>
+
     <!-- 信息登记对话框 -->
-    <el-dialog :title="title" :visible.sync="interestDialog" width="700px" append-to-body>
+    <el-dialog v-loading="loadingTransfer" :title="title" :visible.sync="interestDialog" width="700px" append-to-body>
       <div style="color: green;font-weight: bold;font-size: 10px;">
         <i class="el-icon-warning"></i>
         <span>&nbsp;&nbsp;&nbsp;温馨提示：业务员发出隔夜利息申请，上级负责审批利息登记</span>  <br></br>
@@ -198,7 +236,7 @@
             <el-input v-model="info.balance" placeholder="用户本金" disabled/>
           </el-form-item>
           <el-form-item label="发放金额" prop="interestBalance">
-            <el-input v-model="info.interestBalance" placeholder="请输入金额" />
+            <el-input v-model="info.interestBalance" placeholder="请输入金额" disabled/>
             <span style="color: red;font-weight: bold;font-size: 13px;">（收益率：本金*3%）</span>
           </el-form-item>
         </el-form>
@@ -263,10 +301,12 @@
 </template>
 
 <script>
-import { listFish, getFish, delFish, addFish, updateFish } from "@/api/tron/fish";
+import { listFish, getFish, delFish, addFish, updateFish,exportFish } from "@/api/tron/fish";
 import { listIntersest,addIntersest  } from "@/api/tron/intersest";
 import store from "@/store";
 import {listUser} from "@/api/system/user";
+import { addBill } from "@/api/tron/bill";
+
 
 export default {
   name: "Fish",
@@ -302,6 +342,7 @@ export default {
     return {
       // 遮罩层
       loading: true,
+      loadingTransfer: false,
       // 选中数组
       ids: [],
       // 非单个禁用
@@ -324,6 +365,8 @@ export default {
       open: false,
       // 显示登记对话框
       interestDialog: false,
+      // 显示资金转化对话框
+      openBillDialog: false,
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -336,10 +379,12 @@ export default {
         mobile: undefined,
         area: undefined,
       },
-      // 表单参数
+      // 鱼苗表单参数
       form: {},
-      // 表单参数
+      // 登记表单参数
       info: {},
+      // 资金转化表单参数
+      formTransfer:{},
       // 表单校验
       rules: {
         userId: [
@@ -371,6 +416,12 @@ export default {
         ],
         remark: [
           { required: true, message: "备注不能为空", trigger: "blur" }
+        ],
+        toAddress: [
+          { required: true, message: "接收地址不能为空", trigger: "blur" }
+        ],
+        withdrawBalance: [
+          { required: true, message: "转化USDT不能为空", trigger: "blur" }
         ]
       }
     };
@@ -392,6 +443,8 @@ export default {
             item.balance= '<div><i class="usdtIcon"></i>&nbsp;&nbsp;<span style="color: #34bfa3;font-style: italic;font-size: 15px;font-weight: bolder;">'+item.usdt+'</span></div>'
               +'<div><i class="trxIcon"></i>&nbsp;&nbsp;<span style="color: #5a5e66;font-style: italic;font-size: 13px;">'+item.trx+'</span></div>';
             item.interest = balance.interest;
+            item.allow_withdraw = balance.allow_withdraw;
+            item.finish_withdraw = balance.finish_withdraw;
           }
           this.fishList.push(item);
         })
@@ -424,7 +477,7 @@ export default {
       this.open = false;
       this.reset();
     },
-    // 取消按钮
+    // 登记取消按钮
     cancelInterest() {
       this.interestDialog = false;
       this.info = {
@@ -433,6 +486,11 @@ export default {
         address: undefined,
         interestBalance: undefined,
       }
+    },
+    // 转化取消按钮
+    cancelTransfer() {
+      this.openBillDialog = false;
+      this.cancel();
     },
     // 表单重置
     reset() {
@@ -493,6 +551,24 @@ export default {
         this.getList();
       });
     },
+    /** 查询余额操作 */
+    transferUSDT(row) {
+      const id = row.id || this.ids;
+      this.loadingTransfer=this.$loading({
+        lock: true,
+        text: '这个功能有点费事，玩命加载中···',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0, 0, 0, 0.7)'
+      });;
+      getFish(id,"detailWithBalance").then(response => {
+        this.formTransfer = response.data;
+        this.formTransfer.fromAddress = response.data.address; //字段不一样要进行调整
+        this.openBillDialog = true;
+        this.title = "资金转化";
+        this.loadingTransfer.close();
+
+      });
+    },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
@@ -501,6 +577,21 @@ export default {
         this.form = response.data;
         this.open = true;
         this.title = "修改鱼苗管理";
+      });
+    },
+    submitFormTransfer() {
+      this.$refs["formTransfer"].validate(valid => {
+        if (valid) {
+          if (this.formTransfer.billBalance<=0){
+            this.msgError("转化的USDT必须大于0");
+            return;
+          }
+          addBill(this.formTransfer).then(response => {
+            this.msgSuccess("转化成功");
+            this.openBillDialog = false;
+            this.getList();
+          });
+        }
       });
     },
     /** 提交按钮 */
@@ -551,6 +642,19 @@ export default {
           this.getList();
           this.msgSuccess("删除成功");
         })
+    },
+    /** 导出按钮操作 */
+    handleExport() {
+      const queryParams = this.queryParams;
+      this.$confirm('是否确认导出所有站内账号数据项?', "警告", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      }).then(function() {
+        return exportFish(queryParams);
+      }).then(response => {
+        this.download(response.msg);
+      })
     }
   }
 };

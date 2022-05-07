@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="代理ID" prop="agencyId">
+      <el-form-item label="代理ID" prop="agencyId" v-hasPermi="['*:*:*']">
         <el-input
           v-model="queryParams.agencyId"
           placeholder="请输入代理ID"
@@ -9,6 +9,12 @@
           size="small"
           @keyup.enter.native="handleQuery"
         />
+      </el-form-item>
+      <el-form-item label="地址类型" prop="addressType">
+        <el-select v-model="queryParams.addressType" placeholder="请选择地址类型" clearable size="small">
+          <el-option label="TRX" value="TRX" />
+          <el-option label="USDT" value="USDT" />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
@@ -24,7 +30,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['system:user:list']"
+          v-hasPermi="['tron:account:add']"
         >添加钱包地址</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -35,7 +41,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['system:user:list']"
+          v-hasPermi="['tron:account:remove']"
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -45,7 +51,7 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['system:user:list']"
+          v-hasPermi="['tron:account:export']"
         >导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
@@ -71,14 +77,14 @@
             type="text"
             icon="el-icon-search"
             @click="queryBalance(scope.row)"
-            v-hasPermi="['tron:auth:edit']"
+            v-hasPermi="['tron:account:query']"
           >查询余额</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-key"
             @click="transfer(scope.row)"
-            v-hasPermi="['tron:auth:edit']"
+            v-hasPermi="['tron:account:transfer']"
           >转账</el-button>
           <el-button
             size="mini"
@@ -345,7 +351,6 @@ export default {
             cancelButtonText: "取消",
             type: "warning"
           }).then(() => {
-            console.info(this.fromTransfer);
             if (this.fromTransfer.addressType == "TRX"){
               if (this.fromTransfer.balance>=this.fromTransfer.trx){
                 this.msgError("TRX余额不够，请充值！");
@@ -362,11 +367,11 @@ export default {
                 return;
               }
             }
-            // addTransfer(this.fromTransfer).then(response => {
-            //   this.msgSuccess("转账成功");
-            //   this.openTransfer = false;
-            //   this.getList();
-            // });
+            addTransfer(this.fromTransfer).then(response => {
+              this.msgSuccess("转账成功");
+              this.openTransfer = false;
+              this.getList();
+            });
           })
         }
       });

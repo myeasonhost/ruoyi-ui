@@ -41,28 +41,6 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          type="success"
-          plain
-          icon="el-icon-edit"
-          size="mini"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['tron:intersest:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="el-icon-delete"
-          size="mini"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['tron:intersest:remove']"
-        >删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           type="warning"
           plain
           icon="el-icon-download"
@@ -105,7 +83,7 @@
               type="text"
               icon="el-icon-edit"
               @click="handleDengji(scope.row)"
-              v-hasPermi="['system:user:list']"
+              v-hasPermi="['tron:intersest:dengji']"
             >登记</el-button>
           </span>
           <span v-if="scope.row.status=='2'">
@@ -114,7 +92,7 @@
                  type="text"
                  icon="el-icon-edit"
                  @click="handleUpdate(scope.row)"
-                 v-hasPermi="['system:user:list']"
+                 v-hasPermi="['tron:transfer:add']"
                >打息</el-button>
           </span>
           <span v-if="scope.row.status=='1'">
@@ -142,27 +120,44 @@
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <div style="color: green;font-weight: bold;font-size: 10px;">
         <i class="el-icon-warning"></i>
-        <span>&nbsp;&nbsp;&nbsp;温馨提示：请按时审核利息登记，打息功能还未实现</span>  <br></br>
+        <span>&nbsp;&nbsp;&nbsp;温馨提示：请按时审核利息登记，打息请查询转账记录查看是否成功</span>  <br></br>
       </div>
       <span style="color: #f4516c;font-size: 8px;">&nbsp;&nbsp;&nbsp;【已登记】利息已经打到客户落地页；【已打息】收益已发到客户账户；</span>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+      <el-form ref="form" :model="formTransfer" :rules="rules" label-width="80px">
         <el-form-item label="代理ID" prop="agencyId" >
-          <el-input v-model="form.agencyId" placeholder="请输入代理ID" disabled/>
+          <el-input v-model="formTransfer.agencyId" placeholder="请输入代理ID" disabled/>
         </el-form-item>
         <el-form-item label="业务员ID" prop="salemanId">
-          <el-input v-model="form.salemanId" placeholder="请输入业务员ID" disabled/>
+          <el-input v-model="formTransfer.salemanId" placeholder="请输入业务员ID" disabled/>
         </el-form-item>
-        <el-form-item label="当前本金" prop="currentBalance">
-          <el-input v-model="form.currentBalance" placeholder="请输入当前本金" disabled/>
+        <el-form-item label="收款地址" prop="toAddress">
+          <el-input v-model="formTransfer.toAddress" placeholder="请输入收款地址" disabled/>
         </el-form-item>
-        <el-form-item label="当前利息" prop="currentInterest">
-          <el-input v-model="form.currentInterest" placeholder="请输入当前利息" />
+        <el-form-item label="当前利息" prop="balance">
+          <el-input v-model="formTransfer.balance" placeholder="请输入当前利息" />
         </el-form-item>
-        <el-form-item label="状态">
-          <el-radio-group v-model="form.status" size="medium">
-            <el-radio-button label="2" border>登记</el-radio-button>
-            <el-radio-button label="3" border>打息</el-radio-button>
-          </el-radio-group>
+        <el-form-item label="地址类型" prop="addressType">
+          <el-select v-model="formTransfer.addressType" placeholder="请选择地址类型">
+            <el-option label="TRX" value="TRX"/>
+            <el-option label="USDT" value="USDT" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="打款账户" prop="fromAddress" width="300">
+          <el-col :span="15">
+            <el-select
+              v-model="formTransfer.fromAddress"
+              placeholder="请输入打款账户"
+              @click.native="getAccountList" size="medium">
+              <el-option
+                v-for="item in accountList"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"/>
+            </el-select>
+          </el-col>
+          <el-col :span="8">
+            <dev style="color: red;font-size: 8px;font-weight: bold;">*账户余额要充足*</dev>
+          </el-col>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -177,6 +172,8 @@
 import { listIntersest, getIntersest, delIntersest, addIntersest, updateIntersest, exportIntersest } from "@/api/tron/intersest";
 import store from "@/store";
 import {listUser} from "@/api/system/user";
+import {listAccount} from "@/api/tron/account";
+import {addTransfer} from "@/api/tron/transfer";
 
 export default {
   name: "Intersest",
@@ -200,6 +197,8 @@ export default {
       intersestList: [],
       // 业务员表格数据
       salemanIds: [],
+      // 账户下拉框数据
+      accountList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -219,6 +218,8 @@ export default {
       },
       // 表单参数
       form: {},
+      // 打息转账表单数据,
+      formTransfer: {},
       // 表单校验
       rules: {
         fishId: [
@@ -239,6 +240,15 @@ export default {
         currentInterest: [
           { required: true, message: "利息不能为空", trigger: "blur" }
         ],
+        balance: [
+          { required: true, message: "利息不能为空", trigger: "blur" }
+        ],
+        fromAddress: [
+          { required: true, message: "打款账户不能为空", trigger: "blur" }
+        ],
+        addressType: [
+          { required: true, message: "地址类型不能为空", trigger: "blur" }
+        ]
       }
     };
   },
@@ -306,8 +316,13 @@ export default {
       const id = row.id || this.ids
       getIntersest(id).then(response => {
         this.form = response.data;
+        this.formTransfer.agencyId = this.form.agencyId;
+        this.formTransfer.salemanId = this.form.salemanId;
+        this.formTransfer.toAddress = this.form.address;
+        this.formTransfer.balance = this.form.currentInterest;
+        this.formTransfer.addressType = "USDT";
         this.open = true;
-        this.title = "利息登记处理";
+        this.title = "利息转账处理";
       });
     },
     /** 登记按钮操作 */
@@ -323,6 +338,7 @@ export default {
         type: 'warning'
       }).then(() => {
         this.form.status=2;
+        this.form.remark="审批通过";
         updateIntersest(this.form).then(response => {
           this.msgSuccess("登记成功");
           this.getList();
@@ -338,19 +354,23 @@ export default {
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          if (this.form.id != null) {
-            updateIntersest(this.form).then(response => {
-              this.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
+          this.formTransfer.type = 2; //转账类型 1=赠送,2=打息,3=转账
+          this.$confirm('是否进行【'+this.formTransfer.addressType+'】打息'+this.formTransfer.balance+'的操作？', "警告", {
+            confirmButtonText: "确定",
+            cancelButtonText: "取消",
+            type: "warning"
+          }).then(() => {
+            addTransfer(this.formTransfer).then(response => {
+              this.msgSuccess("打息成功");
+              //更新利息记录表状态
+              this.form.status=3;
+              this.form.remark="已经打息";
+              updateIntersest(this.form).then(response => {
+                this.open = false;
+                this.getList();
+              });
             });
-          } else {
-            addIntersest(this.form).then(response => {
-              this.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
-          }
+          })
         }
       });
     },
@@ -393,7 +413,23 @@ export default {
           this.salemanIds.push(option);
         }
       });
+    },
+    /** 查询站内帐户 */
+    getAccountList() {
+      this.accountList = [];
+      var param = {"pageNum":1,"pageSize":1000}; //账户最高值定在50以内
+      listAccount(param).then(response => {
+        response.rows.map( (item,index) =>{
+          if (item.balance){
+            var balance = eval('(' + item.balance +')');
+            item.label ="【USDT:"+balance.usdt+",TRX:"+balance.trx+"】"+ item.address;
+            item.value = item.address;
+          }
+          this.accountList.push(item);
+        })
+      });
     }
+
   }
 };
 </script>
