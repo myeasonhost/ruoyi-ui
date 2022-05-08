@@ -11,13 +11,17 @@
         />
       </el-form-item>
       <el-form-item label="业务员ID" prop="salemanId" v-hasPermi="['system:user:list']">
-        <el-input
+        <el-select
           v-model="queryParams.salemanId"
           placeholder="请输入业务员ID"
-          clearable
-          size="small"
-          @keyup.enter.native="handleQuery"
-        />
+          @click.native="getUserListByDeptId"
+          @keyup.enter.native="handleQuery">
+          <el-option
+            v-for="item in salemanIds"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"/>
+        </el-select>
       </el-form-item>
       <el-form-item label="来源地址" prop="fromAddress">
         <el-input
@@ -120,6 +124,8 @@
 
 <script>
 import { listTransfer, getTransfer, delTransfer, addTransfer, updateTransfer, exportTransfer } from "@/api/tron/transfer";
+import store from "@/store";
+import {listUser} from "@/api/system/user";
 
 export default {
   name: "Transfer",
@@ -141,6 +147,8 @@ export default {
       total: 0,
       // 转账记录表格数据
       transferList: [],
+      // 业务员表格数据
+      salemanIds: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -298,7 +306,20 @@ export default {
         }).then(response => {
           this.download(response.msg);
         })
-    }
+    },
+    /** 查询业务员列表-按部门ID查找 */
+    getUserListByDeptId() {
+      this.salemanIds = [];
+      var param = {"pageNum":1,"pageSize":1000,"deptId":store.state.user.deptId}; //业务员最高值定在50以内
+      listUser(param).then(response => {
+        for (let row of response.rows) {
+          var option={};
+          option.value=row.userName;
+          option.label=row.userName+"（"+row.nickName+"）";
+          this.salemanIds.push(option);
+        }
+      });
+    },
   }
 };
 </script>

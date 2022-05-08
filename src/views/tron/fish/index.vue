@@ -438,8 +438,8 @@ export default {
         response.rows.map( (item,index) =>{
           if (item.balance){
             var balance = eval('(' + item.balance +')');
-            item.usdt = (balance.usdt).toFixed(6);
-            item.trx = (balance.trx).toFixed(6);
+            item.usdt = balance.usdt;
+            item.trx = balance.trx;
             item.balance= '<div><i class="usdtIcon"></i>&nbsp;&nbsp;<span style="color: #34bfa3;font-style: italic;font-size: 15px;font-weight: bolder;">'+item.usdt+'</span></div>'
               +'<div><i class="trxIcon"></i>&nbsp;&nbsp;<span style="color: #5a5e66;font-style: italic;font-size: 13px;">'+item.trx+'</span></div>';
             item.interest = balance.interest;
