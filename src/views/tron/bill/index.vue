@@ -87,7 +87,7 @@
       </el-table-column>
       <el-table-column label="账户明细" align="left" width="150">
         <template slot-scope="scope">
-          <div style="color: #1890ff;font-family: 'Arial Black';">提现金额：{{scope.row.withdrawBalance==null?"0.00":scope.row.withdrawBalance}}</div>
+          <div style="color: #1890ff;font-family: 'Arial Black';">转化金额：{{scope.row.withdrawBalance==null?"0.00":scope.row.withdrawBalance}}</div>
           <div style="color: #888888;font-style: italic;">结算金额：{{scope.row.billBalance==null?"0.00":scope.row.billBalance}}</div>
           <div style="color: red;font-style: italic;">手续费：{{scope.row.serviceCharge==null?"0.00":scope.row.serviceCharge}}</div>
         </template>

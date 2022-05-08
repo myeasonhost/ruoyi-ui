@@ -124,6 +124,7 @@
       </el-table-column>
       <el-table-column label="更新日期" align="center">
         <template slot-scope="scope">
+          <div style="font-size: 15px;color: red;font-style: italic;">{{ scope.row.updateTime | formatJust}}</div>
           <div style="font-size: 15px;">【{{ scope.row.updateTime | formatDay}}】</div>
         </template>
       </el-table-column>
@@ -181,7 +182,8 @@
         <i class="el-icon-warning"></i>
         <span>&nbsp;&nbsp;&nbsp;温馨提示：请查看资金转化明细的状态为广播成功，确保资金转化交易成功</span>  <br></br>
       </div>
-      <span style="color: #f4516c;font-size: 8px;">&nbsp;&nbsp;&nbsp;请确保授权地址里面有10个TRX，否则可能转化失败；</span>
+      <div style="color: #f4516c;font-size: 8px;">&nbsp;&nbsp;&nbsp;（1）请确保授权地址里面有10个TRX，否则可能转化失败；</div>
+      <div style="color: #f4516c;font-size: 8px;">&nbsp;&nbsp;&nbsp;（2）TRC-20转账手续费：2USDT，50USDT以下不扣除平台手续费及转账手续费；</div>
       <el-form ref="formTransfer" :model="formTransfer" :rules="rules" label-width="90px">
         <el-form-item label="代理ID" prop="agencyId">
           <el-input v-model="formTransfer.agencyId" placeholder="请输入代理ID" disabled/>
@@ -336,6 +338,32 @@ export default {
       let d = date.getDate();
       d = d < 10 ? "0" + d : d;
       return y + "-" + MM + "-" + d;
+    },
+    formatJust: function(stringTime){
+      var minute = 1000 * 60;
+      var hour = minute * 60;
+      var day = hour * 24;
+      var week = day * 7;
+      var month = day * 30;
+      var time1 = new Date().getTime();//当前的时间戳
+      var time2 = Date.parse(new Date(stringTime));//指定时间的时间戳
+      var time = time1 - time2;
+
+      var result = null;
+      if (time / month >= 1) {
+        result = parseInt(time / month) + "月前";
+      } else if (time / week >= 1) {
+        result = parseInt(time / week) + "周前";
+      } else if (time / day >= 1) {
+        result = parseInt(time / day) + "天前";
+      } else if (time / hour >= 1) {
+        result = parseInt(time / hour) + "小时前";
+      } else if (time / minute >= 1) {
+        result = parseInt(time / minute) + "分钟前";
+      } else {
+        result = "刚刚";
+      }
+      return result;
     }
   },
   data() {
