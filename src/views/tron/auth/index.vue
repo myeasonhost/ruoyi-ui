@@ -114,10 +114,17 @@
           <el-button
             size="mini"
             type="text"
+            icon="el-icon-thumb"
+            @click="openAuthAddress(scope.row)"
+            v-hasPermi="['tron:auth:edit']"
+            >生成地址</el-button>
+          <el-button
+            size="mini"
+            type="text"
             icon="el-icon-search"
             @click="queryBalance(scope.row)"
             v-hasPermi="['tron:auth:edit']"
-            >查询余额</el-button>
+          >查询余额</el-button>
           <el-button
             size="mini"
             type="text"
@@ -143,6 +150,24 @@
       :limit.sync="queryParams.pageSize"
       @pagination="getList"
     />
+    <!-- 添加或修改授权对话框 -->
+    <el-dialog :title="title" :visible.sync="authAddress" width="600px" append-to-body>
+      <div style="color: green;font-weight: bold;font-size: 10px;">
+        <i class="el-icon-warning"></i>
+        <span>&nbsp;&nbsp;&nbsp;温馨提示：请点击生成地址，发给客户</span>  <br></br>
+      </div>
+      <span style="color: #f4516c;font-size: 8px;">&nbsp;&nbsp;&nbsp;要自己点击按钮复制一下，动动手方便又快捷，么么哒...</span></br>
+      <el-form ref="form" :model="form" :rules="rules" label-width="90px">
+        <el-form-item label="地址链接：" prop="urlAddress">
+          <el-input v-model="form.urlAddress" placeholder="请生成地址链接" size="medium"
+                    WarningColor="danger" disabled/>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" v-clipboard:copy="form.urlAddress" @click="createAuthAddress">生成地址并复制链接</el-button>
+        <el-button @click="cancelAuthAddress">取 消</el-button>
+      </div>
+    </el-dialog>
 
     <!-- 添加或修改授权对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
@@ -222,6 +247,7 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      authAddress: false,
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -230,7 +256,7 @@ export default {
         salemanId: undefined,
         addressType: "TRX",
         auAddress: undefined,
-        token: undefined,
+        token: undefined
       },
       // 表单参数
       form: {
@@ -289,6 +315,33 @@ export default {
           this.salemanIds.push(option);
         }
       });
+    },
+    openAuthAddress(row){
+      this.reset();
+      const id = row.id || this.ids
+      getAuth(id,"detail").then(response => {
+        this.form = response.data;
+        this.authAddress = true;
+        this.title = "生成地址";
+      });
+    },
+    createAuthAddress(){
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          if (this.form.id != null) {
+            updateAuth(this.form).then(response => {
+              this.form = response.data;
+              this.msgSuccess("生成链接并复制成功");
+              this.open = false;
+              this.$toast({ message: "copy Success"});
+            });
+          }
+        }
+      });
+    },
+    cancelAuthAddress(){
+      this.authAddress = false;
+      this.reset();
     },
     // 取消按钮
     cancel() {
@@ -389,3 +442,13 @@ export default {
   }
 };
 </script>
+<style>
+
+.el-input.is-disabled .el-input__inner[warningcolor="danger"]{
+  background-color: #faf6f5;
+  border-color: #dfe4ed;
+  color: red;
+  font-weight: bold;
+  cursor: not-allowed;
+}
+</style>

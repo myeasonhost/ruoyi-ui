@@ -87,7 +87,7 @@
               v-hasPermi="['tron:withdraw:keti']"
             >同意可提</el-button>
           </span>
-          <span v-if="scope.row.status=='2'">
+          <span v-if="scope.row.status=='2'" v-hasPermi="['system:user:list']">
                <el-button
                  size="mini"
                  type="text"
@@ -103,7 +103,7 @@
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
             v-hasPermi="['tron:withdraw:remove']"
-          >删除</el-button>
+          >拒绝提现</el-button>
           </span>
         </template>
       </el-table-column>
@@ -171,8 +171,7 @@
 </template>
 
 <script>
-import { listWithdraw, getWithdraw, delWithdraw, addWithdraw, updateWithdraw, exportWithdraw } from "@/api/tron/withdraw";
-import {getIntersest, updateIntersest} from "@/api/tron/intersest";
+import {delWithdraw, exportWithdraw, getWithdraw, listWithdraw, updateWithdraw} from "@/api/tron/withdraw";
 import store from "@/store";
 import {listUser} from "@/api/system/user";
 import {listAccount} from "@/api/tron/account";
@@ -385,16 +384,16 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const ids = row.id || this.ids;
-      this.$confirm('是否确认删除提款编号为"' + ids + '"的数据项?', "警告", {
+      const id = row.id;
+      this.$confirm('是否确认拒绝提款 鱼苗ID为"' + row.fishId + '"的数据项?', "警告", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning"
         }).then(function() {
-          return delWithdraw(ids);
+          return delWithdraw(id);
         }).then(() => {
           this.getList();
-          this.msgSuccess("删除成功");
+          this.msgSuccess("拒绝成功");
         })
     },
     /** 导出按钮操作 */

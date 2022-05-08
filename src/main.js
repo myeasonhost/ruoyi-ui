@@ -11,6 +11,7 @@ import App from './App'
 import store from './store'
 import router from './router'
 import permission from './directive/permission'
+import vlipboard from "vue-clipboard2"
 
 import './assets/icons' // icon
 import './permission' // permission control
@@ -47,7 +48,7 @@ Vue.prototype.msgInfo = function (msg) {
 // 全局组件挂载
 Vue.component('Pagination', Pagination)
 Vue.component('RightToolbar', RightToolbar)
-
+Vue.use(vlipboard);
 Vue.use(permission)
 
 /**
