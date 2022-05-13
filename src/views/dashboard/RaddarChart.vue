@@ -68,8 +68,8 @@ export default {
             }
           },
           indicator: [
-            { name: 'Sales', max: 10000 },
-            { name: 'Administration', max: 20000 },
+            { name: '业务员', max: 10000 },
+            { name: '代理', max: 20000 },
             { name: 'Information Techology', max: 20000 },
             { name: 'Customer Support', max: 20000 },
             { name: 'Development', max: 20000 },
@@ -95,15 +95,15 @@ export default {
           },
           data: [
             {
-              value: [5000, 7000, 12000, 11000, 15000, 14000],
+              value: [10, 0, 0, 0, 0, 0],
               name: 'Allocated Budget'
             },
             {
-              value: [4000, 9000, 15000, 15000, 13000, 11000],
+              value: [0, 0, 0, 0, 0, 0],
               name: 'Expected Spending'
             },
             {
-              value: [5500, 11000, 12000, 15000, 12000, 12000],
+              value: [0, 0, 0, 0, 0, 0],
               name: 'Actual Spending'
             }
           ],

@@ -55,17 +55,26 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="id"/>
       <el-table-column label="代理ID" align="center" prop="agencyId" />
-      <el-table-column label="地址类型" align="center" prop="addressType"  width="80"/>
-      <el-table-column label="地址" align="center" prop="address"  width="300"/>
-      <el-table-column label="占比" align="center" prop="point"  width="80"/>
-      <el-table-column label="服务费" align="center" prop="serviceCharge"  width="80"/>
+      <el-table-column label="地址" align="center" prop="address"  width="360">
+        <template slot-scope="scope">
+          <div style="color: #1890ff;font-family: 'Arial Black';">{{ scope.row.address}}</div>
+          <div style="color: #888888;font-style: italic;">地址类型:{{ scope.row.addressType }}</div>
+        </template>
+      </el-table-column>
+      <el-table-column label="账户明细" align="left" width="150">
+        <template slot-scope="scope">
+          <div style="color: #1890ff;font-family: 'Arial Black';">占比：{{scope.row.point==null?"0.00":scope.row.point}}</div>
+          <div style="color: #888888;font-style: italic;">限额：{{scope.row.min==null?"0.00":scope.row.min}}</div>
+          <div style="color: red;font-style: italic;">服务费：{{scope.row.serviceCharge==null?"0.00":scope.row.serviceCharge}}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="余额" align="left"  prop="balance" width="150">
         <template slot-scope="scope">
           <div v-html="scope.row.balance">
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="生成日期" align="center" width="150">
+      <el-table-column label="生成日期" align="center" width="130">
         <template slot-scope="scope">
           <div style="font-size: 15px;">【{{ scope.row.createTime | formatDay}}】</div>
         </template>
@@ -134,6 +143,9 @@
         </el-form-item>
         <el-form-item label="占比" prop="point">
           <el-input v-model="form.point" placeholder="请输入代理ID" />
+        </el-form-item>
+        <el-form-item label="限额" prop="point">
+          <el-input v-model="form.min" placeholder="请输入限额" />
         </el-form-item>
         <el-form-item label="服务费" prop="serviceCharge">
           <el-input v-model="form.serviceCharge" placeholder="请输入服务费" />
@@ -209,6 +221,9 @@ export default {
         ],
         point: [
           { required: true, message: "占比不能为空", trigger: "blur" }
+        ],
+        min: [
+          { required: true, message: "限额不能为空", trigger: "blur" }
         ],
         serviceCharge: [
           { required: true, message: "服务费不能为空", trigger: "blur" }

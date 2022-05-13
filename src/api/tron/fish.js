@@ -9,6 +9,22 @@ export function listFish(query) {
   })
 }
 
+// 查询鱼苗统计
+export function countFish(id) {
+  return request({
+    url: '/tron/fish/count/stat',
+    method: 'post'
+  })
+}
+
+// 查询账单统计
+export function countBill(id,method) {
+  return request({
+    url: '/tron/bill/count/'+method,
+    method: 'post'
+  })
+}
+
 // 查询鱼苗管理详细
 export function getFish(id,method) {
   return request({

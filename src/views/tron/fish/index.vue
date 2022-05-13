@@ -122,10 +122,11 @@
           <div style="color: gray;font-style: italic;">可提：{{scope.row.allow_withdraw==null?"0.00":scope.row.allow_withdraw}}</div>
         </template>
       </el-table-column>
-      <el-table-column label="更新日期" align="center">
+      <el-table-column label="更新日期" align="center" width="130">
         <template slot-scope="scope">
           <div style="font-size: 15px;color: red;font-style: italic;">{{ scope.row.updateTime | formatJust}}</div>
           <div style="font-size: 15px;">【{{ scope.row.updateTime | formatDay}}】</div>
+          <div style="color: red;font-weight: bold;">{{scope.row.billusdt==null?"":"已转化："+scope.row.billusdt}}</div>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
