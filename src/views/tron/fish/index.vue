@@ -141,6 +141,13 @@
           <el-button
             size="mini"
             type="text"
+            icon="el-icon-warning-outline"
+            @click="queryAuth(scope.row)"
+            v-hasPermi="['tron:fish:queryBalance']"
+          >查询授权</el-button>
+          <el-button
+            size="mini"
+            type="text"
             icon="el-icon-alarm-clock"
             @click="handleInterest(scope.row)"
             v-hasPermi="['tron:fish:dengji']"
@@ -579,6 +586,10 @@ export default {
         this.msgSuccess("余额查询成功");
         this.getList();
       });
+    },
+    queryAuth(row) {
+      var href="https://tronscan.io/#/balanceView/"+row.address+"/approval";
+      window.open(href, '_blank');
     },
     /** 查询余额操作 */
     transferUSDT(row) {

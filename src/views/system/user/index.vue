@@ -439,6 +439,9 @@ export default {
         password: [
           { required: true, message: "用户密码不能为空", trigger: "blur" }
         ],
+        deptId: [
+          { required: true, message: "用户部门不能为空", trigger: "blur" }
+        ],
         email: [
           {
             type: "email",
