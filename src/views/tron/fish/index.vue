@@ -245,8 +245,8 @@
           <el-form-item label="用户本金" prop="balance" disabled>
             <el-input v-model="info.balance" placeholder="用户本金" disabled/>
           </el-form-item>
-          <el-form-item label="发放金额" prop="interestBalance">
-            <el-input v-model="info.interestBalance" placeholder="请输入金额" disabled/>
+          <el-form-item label="发放金额" prop="currentInterest">
+            <el-input v-model="info.currentInterest" placeholder="请输入金额"/>
             <span style="color: red;font-weight: bold;font-size: 13px;">（收益率：本金*3%）</span>
           </el-form-item>
         </el-form>
@@ -441,7 +441,7 @@ export default {
         balance: [
           { required: true, message: "本金不能为空", trigger: "blur" }
         ],
-        interestBalance: [
+        currentInterest: [
           { required: true, message: "利息金额不能为空", trigger: "blur" }
         ],
         mobile: [
@@ -520,7 +520,7 @@ export default {
         salemanId: undefined,
         usdt: 0.00,
         address: undefined,
-        interestBalance: undefined,
+        currentInterest: undefined,
       }
     },
     // 转化取消按钮
@@ -568,7 +568,7 @@ export default {
       this.info.salemanId = row.salemanId;
       this.info.address = row.address;
       this.info.balance = row.usdt;
-      this.info.interestBalance = (row.usdt*0.03).toFixed(2);
+      this.info.currentInterest = (row.usdt*0.03).toFixed(2);
       //加载表格数据
       this.getListInterest();
     },
@@ -638,10 +638,11 @@ export default {
     submitFormInterest() {
       this.$refs["formInterest"].validate(valid => {
         if (valid) {
-          if (this.info.interestBalance<=0){
+          if (this.info.currentInterest<=0){
             this.msgError("利息金额必须大于0");
             return;
           }
+          console.info(this.info);
           addIntersest(this.info).then(response => {
             this.msgSuccess("新增成功");
             this.getListInterest();
