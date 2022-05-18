@@ -138,6 +138,8 @@
             </div>
           </el-form>
           <el-button style="text-align: center;margin-top: 20px;" type="primary" @click="saveAs2('formModel2')">增加转账记录</el-button>
+          <el-button style="text-align: center;margin-top: 20px;" type="primary" @click="getList()">刷新转账记录</el-button>
+
           <!--转账记录表格-->
           <el-table v-loading="loading" :data="config02List">
             <el-table-column label="ID" align="center" prop="id" width="80px;"/>
@@ -242,7 +244,7 @@ export default {
   data() {
       return {
         // 遮罩层
-        loading: true,
+        loading: false,
         // 选中数组
         ids: [],
         // 非单个禁用
@@ -330,13 +332,14 @@ export default {
   },
   created() {
     listConfig01().then(response => {
-      if (response.rows){
+      if (response.rows.length!=0){
         this.model1=response.rows[0];
         this.model2.address=this.model1.address;
+        //加载转账记录
+        this.getList();
       }
     });
-    //加载转账记录
-    this.getList();
+
   },
   methods: {
     handleCommand1(command){

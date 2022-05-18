@@ -642,7 +642,6 @@ export default {
             this.msgError("利息金额必须大于0");
             return;
           }
-          console.info(this.info);
           addIntersest(this.info).then(response => {
             this.msgSuccess("新增成功");
             this.getListInterest();

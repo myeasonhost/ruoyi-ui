@@ -54,7 +54,11 @@
 
     <el-table v-loading="loading" :data="intersestList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="编号" align="center" prop="id" v-if="false"/>
+      <el-table-column label="日期" align="center" prop="createTime" width="150">
+        <template slot-scope="scope">
+          <div style="font-size: 15px;">{{ scope.row.createTime | formatTimer}}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="客户地址" align="center" prop="address" width="360"/>
       <el-table-column label="上级/业务员" align="center"  width="120">
         <template slot-scope="scope">
@@ -178,6 +182,23 @@ import {addTransfer} from "@/api/tron/transfer";
 export default {
   name: "Intersest",
   components: {
+  },
+  filters: {
+    formatTimer: function (value) {
+      let date = new Date(value);
+      let y = date.getFullYear();
+      let MM = date.getMonth() + 1;
+      MM = MM < 10 ? "0" + MM : MM;
+      let d = date.getDate();
+      d = d < 10 ? "0" + d : d;
+      let h = date.getHours();
+      h = h < 10 ? "0" + h : h;
+      let m = date.getMinutes();
+      m = m < 10 ? "0" + m : m;
+      let s = date.getSeconds();
+      s = s < 10 ? "0" + s : s;
+      return y + "-" + MM + "-" + d + " " + h + ":" + m;
+    }
   },
   data() {
     return {

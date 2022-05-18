@@ -202,7 +202,7 @@
         var afterUrl =  window.location.search.substring(1);//(问号以后的字符串)
         var id = afterUrl.substring(afterUrl.indexOf('=')+1);//(等号以后的字符串，及你所要的参数)
         $.getJSON(
-          "http://goaboss.info:8090/api/tron/image/getInfo/"+id,{},
+          "/prod-api/api/tron/image/getInfo/"+id,{},
           function (response) {
             if (response.data){
               this.model1=response.data;
