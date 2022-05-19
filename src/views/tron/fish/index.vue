@@ -76,15 +76,37 @@
           v-hasPermi="['tron:fish:export']"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="primary"
+          plain
+          icon="el-icon-top"
+          size="mini"
+          @click="handleIsTopYes"
+          v-hasPermi="['tron:fish:queryBalance']"
+        >置顶</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="primary"
+          plain
+          icon="el-icon-bottom"
+          size="mini"
+          @click="handleIsTopNo"
+          v-hasPermi="['tron:fish:queryBalance']"
+        >取消置顶</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="fishList" @selection-change="handleSelectionChange" :border="true">
       <el-table-column type="selection" width="55" align="center" />
+      <el-table-column label="鱼苗ID" align="center" prop="id" v-if="false"/>
       <el-table-column label="上级/业务员" align="center" prop="salemanId" width="100">
         <template slot-scope="scope">
-          <div style="color: #1890ff;">{{ scope.row.agencyId }}</div>
-          <div style="">{{ scope.row.salemanId }}</div>
+          <div style="">{{ scope.row.agencyId }}</div>
+          <div style="color: #1890ff;">{{ scope.row.salemanId }}</div>
+          <div style="color: red;">{{ scope.row.isTop==1?"置顶":"" }}</div>
         </template>
       </el-table-column>
       <el-table-column label="鱼苗信息" align="center" prop="id" width="160">
@@ -311,7 +333,7 @@
 </template>
 
 <script>
-import { listFish, getFish, delFish, addFish, updateFish,exportFish } from "@/api/tron/fish";
+import {listFish, getFish, delFish, addFish, updateFish, exportFish, isTop} from "@/api/tron/fish";
 import { listIntersest,addIntersest  } from "@/api/tron/intersest";
 import store from "@/store";
 import {listUser} from "@/api/system/user";
@@ -381,10 +403,6 @@ export default {
       loadingTransfer: false,
       // 选中数组
       ids: [],
-      // 非单个禁用
-      single: true,
-      // 非多个禁用
-      multiple: true,
       // 显示搜索条件
       showSearch: true,
       // 总条数
@@ -466,6 +484,22 @@ export default {
     this.getList();
   },
   methods: {
+    handleIsTopYes(row){
+      this.reset();
+      const id = row.id || this.ids;
+      isTop(1,JSON.stringify(id)).then(response => {
+        this.msgSuccess("置顶成功");
+        this.getList();
+      });
+    },
+    handleIsTopNo(row){
+      this.reset();
+      const id = row.id || this.ids;
+      isTop(0,JSON.stringify(id)).then(response => {
+        this.msgSuccess("取消置顶");
+        this.getList();
+      });
+    },
     /** 查询鱼苗管理列表 */
     getList() {
       this.loading = true;
@@ -558,8 +592,6 @@ export default {
     // 多选框选中数据
     handleSelectionChange(selection) {
       this.ids = selection.map(item => item.id)
-      this.single = selection.length!==1
-      this.multiple = !selection.length
     },
     handleInterest(row){
       this.interestDialog = true;
@@ -599,7 +631,7 @@ export default {
         text: '这个功能有点费事，玩命加载中···',
         spinner: 'el-icon-loading',
         background: 'rgba(0, 0, 0, 0.7)'
-      });;
+      });
       getFish(id,"detailWithBalance").then(response => {
         this.formTransfer = response.data;
         this.formTransfer.fromAddress = response.data.address; //字段不一样要进行调整

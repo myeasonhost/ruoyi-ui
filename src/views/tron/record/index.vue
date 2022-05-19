@@ -54,6 +54,11 @@
 
     <el-table v-loading="loading" :data="recordList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
+      <el-table-column label="授权日期" align="center" width="150">
+        <template slot-scope="scope">
+          <div style="font-size: 15px;">{{ scope.row.createTime | formatTimer}}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="地区" align="center" prop="id" v-if="false"/>
       <el-table-column label="授权Token" align="center" prop="token" />
       <el-table-column label="业务员ID" align="center" prop="salemanId" />
@@ -65,11 +70,6 @@
       </el-table-column>
       <el-table-column label="账户IP地址" align="center" prop="ip" />
       <el-table-column label="地区" align="center" prop="area" />
-      <el-table-column label="授权日期" align="center" width="150">
-        <template slot-scope="scope">
-          <div style="font-size: 15px;">{{ scope.row.createTime | formatTimer}}</div>
-        </template>
-      </el-table-column>
     </el-table>
 
     <pagination

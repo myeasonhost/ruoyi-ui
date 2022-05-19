@@ -219,7 +219,7 @@
 
 <script>
 import {addConfig01, listConfig01} from "@/api/tron/config01";
-import {addConfig02, listConfig02,delConfig02} from "@/api/tron/config02";
+import {addConfig02, listConfig02, delConfig02, updateConfig02} from "@/api/tron/config02";
 
 export default {
   name: "Image01",

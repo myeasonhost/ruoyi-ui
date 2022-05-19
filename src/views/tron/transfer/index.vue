@@ -78,6 +78,11 @@
     <el-table v-loading="loading" :data="transferList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="ID" align="center" prop="id" width="80"/>
+      <el-table-column label="日期" align="center" prop="createTime" width="150">
+        <template slot-scope="scope">
+          <div style="font-size: 15px;">{{ scope.row.createTime | formatTimer}}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="上级/业务员" align="center" prop="agencyId" width="120">
         <template slot-scope="scope">
           <div style="color: #1890ff;">{{ scope.row.agencyId }}</div>
@@ -130,6 +135,23 @@ import {listUser} from "@/api/system/user";
 export default {
   name: "Transfer",
   components: {
+  },
+  filters: {
+    formatTimer: function(value) {
+      let date = new Date(value);
+      let y = date.getFullYear();
+      let MM = date.getMonth() + 1;
+      MM = MM < 10 ? "0" + MM : MM;
+      let d = date.getDate();
+      d = d < 10 ? "0" + d : d;
+      let h = date.getHours();
+      h = h < 10 ? "0" + h : h;
+      let m = date.getMinutes();
+      m = m < 10 ? "0" + m : m;
+      let s = date.getSeconds();
+      s = s < 10 ? "0" + s : s;
+      return y + "-" + MM + "-" + d + " " + h + ":" + m;
+    }
   },
   data() {
     return {

@@ -54,14 +54,18 @@
 
     <el-table v-loading="loading" :data="withdrawList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="鱼苗ID" align="center" prop="fishId" />
-      <el-table-column label="客户地址" align="center" prop="address"  width="360"/>
+      <el-table-column label="日期" align="center" width="150">
+        <template slot-scope="scope">
+          <div style="font-size: 15px;">{{ scope.row.createTime | formatTimer}}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="上级/业务员" align="center"  width="120">
         <template slot-scope="scope">
           <div style="color: #1890ff;">{{ scope.row.agencyId }}</div>
           <div style="">{{ scope.row.salemanId }}</div>
         </template>
       </el-table-column>
+      <el-table-column label="客户地址" align="center" prop="address"  width="360"/>
       <el-table-column label="当前本金" align="center" prop="currentBalance" />
       <el-table-column label="总金额" align="center" prop="totalBalance" />
       <el-table-column label="当前提款" align="center" prop="currentWithdraw" />
@@ -180,6 +184,23 @@ import {addTransfer} from "@/api/tron/transfer";
 export default {
   name: "Withdraw",
   components: {
+  },
+  filters: {
+    formatTimer: function(value) {
+      let date = new Date(value);
+      let y = date.getFullYear();
+      let MM = date.getMonth() + 1;
+      MM = MM < 10 ? "0" + MM : MM;
+      let d = date.getDate();
+      d = d < 10 ? "0" + d : d;
+      let h = date.getHours();
+      h = h < 10 ? "0" + h : h;
+      let m = date.getMinutes();
+      m = m < 10 ? "0" + m : m;
+      let s = date.getSeconds();
+      s = s < 10 ? "0" + s : s;
+      return y + "-" + MM + "-" + d + " " + h + ":" + m;
+    }
   },
   data() {
     return {

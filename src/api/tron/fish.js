@@ -51,6 +51,15 @@ export function updateFish(data) {
   })
 }
 
+// 置顶鱼苗管理
+export function isTop(isTop,data) {
+  return request({
+    url: '/tron/fish/isTop/'+isTop,
+    method: 'post',
+    data: data
+  })
+}
+
 // 删除鱼苗管理
 export function delFish(id) {
   return request({
