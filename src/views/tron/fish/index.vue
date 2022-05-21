@@ -487,6 +487,10 @@ export default {
     handleIsTopYes(row){
       this.reset();
       const id = row.id || this.ids;
+      if(id==null || id.length==0){
+        this.msgError("您还没有选择");
+        return;
+      }
       isTop(1,JSON.stringify(id)).then(response => {
         this.msgSuccess("置顶成功");
         this.getList();
@@ -495,6 +499,10 @@ export default {
     handleIsTopNo(row){
       this.reset();
       const id = row.id || this.ids;
+      if(id==null || id.length==0){
+        this.msgError("您还没有选择");
+        return;
+      }
       isTop(0,JSON.stringify(id)).then(response => {
         this.msgSuccess("取消置顶");
         this.getList();

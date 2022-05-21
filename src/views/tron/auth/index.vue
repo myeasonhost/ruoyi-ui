@@ -81,16 +81,26 @@
     <el-table v-loading="loading" :data="authList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="授权代码" align="center" prop="id" v-if="false"/>
+      <el-table-column label="生成日期" align="center" width="130">
+        <template slot-scope="scope">
+          <div style="font-size: 15px;">【{{ scope.row.createTime | formatDay}}】</div>
+        </template>
+      </el-table-column>
       <el-table-column label="上级/业务员" align="center" prop="salemanId" width="120">
         <template slot-scope="scope">
           <div style="color: #1890ff;">{{ scope.row.agencyId }}</div>
           <div style="">{{ scope.row.salemanId }}</div>
         </template>
       </el-table-column>
-      <el-table-column label="地址类型" align="center" prop="addressType" width="80"/>
+      <el-table-column label="客服号/地址类型" align="center" prop="addressType" width="140">
+        <template slot-scope="scope">
+          <div style="color: red;">{{ scope.row.salemanPhone }}</div>
+          <div style="">{{ scope.row.addressType }}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="授权地址" align="center" prop="auAddress"  width="400">
         <template slot-scope="scope">
-          <div style="color: #888888;font-style: italic;">{{ scope.row.auAddress }}</div>
+          <div style="color: #1482f0;font-weight: bold;">{{ scope.row.auAddress }}</div>
           <div>
             <span style="color: gray;font-style: italic;">{{ scope.row.remark }}</span>
             <span style="color: red;font-style: italic;">{{ scope.row.token==null?"":"【"+scope.row.token+"】" }}</span>
@@ -102,11 +112,6 @@
         <template slot-scope="scope">
           <div v-html="scope.row.balance">
           </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="生成日期" align="center" width="150">
-        <template slot-scope="scope">
-          <div style="font-size: 15px;">【{{ scope.row.createTime | formatDay}}】</div>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -193,6 +198,9 @@
             <el-option label="USDT" value="USDT" />
           </el-select>
         </el-form-item>
+        <el-form-item label="客服电话" prop="salemanPhone">
+          <el-input v-model="form.salemanPhone" placeholder="示例：Whatsapp:+85777777 或 telegram:@TRON001" />
+        </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" placeholder="请输入备注" />
         </el-form-item>
@@ -272,6 +280,9 @@ export default {
         ],
         token: [
           { required: true, message: "授权代码不能为空", trigger: "blur" }
+        ],
+        salemanPhone: [
+          { required: true, message: "客服电话不能为空", trigger: "blur" }
         ],
         remark: [
           { required: true, message: "备注不能为空", trigger: "blur" }
