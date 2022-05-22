@@ -57,7 +57,7 @@
 
 <script>
 import CountTo from 'vue-count-to'
-import {countFish, countBill, getFish} from "@/api/tron/fish";
+import {countFish} from "@/api/tron/fish";
 
 export default {
   data() {

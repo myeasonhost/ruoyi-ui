@@ -10,7 +10,7 @@ export function listFish(query) {
 }
 
 // 查询鱼苗统计
-export function countFish(id) {
+export function countFish() {
   return request({
     url: '/tron/fish/count/stat',
     method: 'post'

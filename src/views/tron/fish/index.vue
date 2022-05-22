@@ -523,6 +523,7 @@ export default {
             item.interest = balance.interest;
             item.allow_withdraw = balance.allow_withdraw;
             item.finish_withdraw = balance.finish_withdraw;
+            item.billusdt= balance.billusdt;
           }
           this.fishList.push(item);
         })

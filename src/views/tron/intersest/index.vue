@@ -173,7 +173,7 @@
 </template>
 
 <script>
-import { listIntersest, getIntersest, delIntersest, addIntersest, updateIntersest, exportIntersest } from "@/api/tron/intersest";
+import { listIntersest, getIntersest, delIntersest, updateIntersest, exportIntersest } from "@/api/tron/intersest";
 import store from "@/store";
 import {listUser} from "@/api/system/user";
 import {listAccount} from "@/api/tron/account";
