@@ -281,9 +281,6 @@ export default {
         token: [
           { required: true, message: "授权代码不能为空", trigger: "blur" }
         ],
-        salemanPhone: [
-          { required: true, message: "客服电话不能为空", trigger: "blur" }
-        ],
         remark: [
           { required: true, message: "备注不能为空", trigger: "blur" }
         ],

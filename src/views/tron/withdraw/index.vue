@@ -67,7 +67,7 @@
       </el-table-column>
       <el-table-column label="客户地址" align="center" prop="address"  width="360"/>
       <el-table-column label="当前本金" align="center" prop="currentBalance" />
-      <el-table-column label="总金额" align="center" prop="totalBalance" />
+      <el-table-column label="挖矿总金额" align="center" prop="totalBalance" />
       <el-table-column label="当前提款" align="center" prop="currentWithdraw" />
       <el-table-column label="状态" align="center" >
         <template slot-scope="scope">
