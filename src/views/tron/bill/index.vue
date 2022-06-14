@@ -43,6 +43,9 @@
           <el-option label="广播中" value="1" />
           <el-option label="广播成功" value="2" />
           <el-option label="广播失败" value="3" />
+          <el-option label="交易失败" value="5" />
+          <el-option label="交易成功" value="4" />
+
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -98,6 +101,8 @@
             <span style="color: blue;font-style: italic;">{{ scope.row.status=="1"?"广播中":"" }}</span>
             <span style="color: green;font-style: italic;">{{ scope.row.status=="2"?"广播成功":"" }}</span>
             <span style="color: red;font-style: italic;">{{ scope.row.status=="3"?"广播失败":"" }}</span>
+            <span style="color: red;font-style: italic;">{{ scope.row.status=="5"?"交易失败":"" }}</span>
+            <span style="color: limegreen;font-weight: bold;">{{ scope.row.status=="4"?"交易成功":"" }}</span>
           </div>
         </template>
       </el-table-column>
